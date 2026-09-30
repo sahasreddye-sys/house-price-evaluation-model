@@ -275,7 +275,7 @@ function buildRamp() {
   const stops = [0, 0.25, 0.5, 0.75, 1].map(t => rampColor(t, hue, dark) + ' ' + t * 100 + '%').join(',');
   $('ramp').style.background = `linear-gradient(to right, ${stops})`;
   const d = cur();
-  if (d) $('rampTicks').innerHTML = [d.vLo, d.vMid, d.vHi].map(v => `<span>${fmtShort(v)}</span>`).join('');
+  if (d) { $('rampLo').textContent = fmtShort(d.vLo); $('rampHi').textContent = fmtShort(d.vHi); }
 }
 function sizeMap() {
   const r = map.canvas.getBoundingClientRect();
@@ -504,8 +504,9 @@ function renderTry() {
     for (let k = Math.floor(q * d.order.length); k < d.order.length; k++) { const i = d.order[k]; if (ok(i) && d.H.est[i] >= target) { best = i; break; } }
     if (best >= 0) picks.push(best);
   }
-  if (picks.length) $('q').placeholder = 'Street address, like ' + d.H.addr[picks[0]];
-  row.innerHTML = 'Try ' + picks.map(i => `<button class="chip" type="button" data-i="${i}">${esc(d.H.addr[i])}</button>`).join('');
+  if (picks.length) $('q').placeholder = 'Street address, e.g. ' + d.H.addr[picks[0]];
+  const links = picks.map(i => `<button class="linkish" type="button" data-i="${i}">${esc(d.H.addr[i])}</button>`);
+  row.innerHTML = 'Or open ' + (links.length > 1 ? links.slice(0, -1).join(', ') + ' or ' + links[links.length - 1] : links.join('')) + '.';
   row.hidden = false;
 }
 $('tryRow').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) selectHome(+b.dataset.i, { from: 'search' }); });
@@ -540,7 +541,8 @@ function renderResult() {
   $('result').hidden = false;
   $('rAddr').textContent = H.addr[i] || H.id[i];
   const use = market === 'alpharetta' ? (LU[d.useOf(i)] || d.useOf(i)) : titleCase(d.useOf(i));
-  $('rMeta').textContent = [d.subOf(i), use, d.nbrOf(i) ? 'Neighborhood ' + d.nbrOf(i) : '', 'Parcel ' + H.id[i]].filter(Boolean).join(' · ');
+  $('rParcel').textContent = 'Parcel ' + H.id[i].replace(/\s+/g, ' ');
+  $('rMeta').textContent = [use, d.subOf(i), d.nbrOf(i) ? 'neighborhood ' + d.nbrOf(i) : ''].filter(Boolean).join(' · ');
   const link = $('rCounty');
   if (H.link) { link.href = H.link + H.id[i].replace(/ /g, '+'); link.hidden = false; } else link.hidden = true;
 
@@ -569,9 +571,9 @@ function updateEstimate(initial) {
   state.est = est;
   const lo = round100(est * d.lowMul), hi = round100(est * d.highMul);
   if (!initial) estSpring.set(est);
-  $('rRange').textContent = `80% range ${fmtUSD(lo)} – ${fmtUSD(hi)}`;
+  $('rRange').textContent = `80% likely between ${fmtUSD(lo)} and ${fmtUSD(hi)}`;
   const delta = est - orig;
-  $('rAdj').textContent = Math.abs(delta) < 50 ? '' : `With your changes: ${delta > 0 ? '+' : '−'}${fmtUSD(round100(Math.abs(delta)))} (${fmtPct(delta / orig * 100)}) from ${fmtUSD(orig)}`;
+  $('rAdj').textContent = Math.abs(delta) < 50 ? '' : `${delta > 0 ? 'Up' : 'Down'} ${fmtUSD(round100(Math.abs(delta)))} (${fmtPct(delta / orig * 100)}) from ${fmtUSD(orig)} with your changes`;
   $('rReset').hidden = Math.abs(delta) < 1 && state.vec.every((v, k) => v === state.orig[k]);
 
   // range visual
@@ -599,13 +601,13 @@ function updateEstimate(initial) {
   // comparison
   const diff = (est - cv) / cv * 100;
   const rows = [
-    [`County value ${TAX_YEAR}`, fmtUSD(cv), `Model is ${Math.abs(diff) < 0.5 ? 'within 0.5%' : fmtPct(diff) + (diff > 0 ? ' higher' : ' lower')}`],
+    [`County value ${TAX_YEAR}`, fmtUSD(cv), `model is ${Math.abs(diff) < 0.5 ? 'within 0.5%' : Math.abs(diff).toFixed(1) + '%' + (diff > 0 ? ' higher' : ' lower')}`],
   ];
   if (state.market === 'alpharetta') {
-    rows.push(H.sp[i] ? ['Last recorded sale', fmtUSD(H.sp[i]), fmtDate(H.sd[i])] : ['Last recorded sale', '—', 'None on file']);
+    rows.push(H.sp[i] ? ['Last recorded sale', fmtUSD(H.sp[i]), fmtDate(H.sd[i])] : ['Last recorded sale', 'none on file', '']);
   }
-  if (H.sqft[i]) rows.push(['Estimate per sq ft', fmtUSD(est / H.sqft[i]), `county: ${fmtUSD(cv / H.sqft[i])}`]);
-  $('rCompare').innerHTML = rows.map(([k, v, s]) => `<div><dt>${k}</dt><dd class="num">${v}<small>${esc(s)}</small></dd></div>`).join('');
+  if (H.sqft[i]) rows.push(['Estimate per sq ft', fmtUSD(est / H.sqft[i]), `county ${fmtUSD(cv / H.sqft[i])}`]);
+  $('rCompare').innerHTML = rows.map(([k, v, s]) => `<div><dt>${k}</dt><dd class="num">${v}${s ? `<small>${esc(s)}</small>` : ''}</dd></div>`).join('');
 }
 
 function featValue(d, f, i) {
@@ -644,13 +646,14 @@ function renderDrivers() {
 function renderSliders() {
   const d = cur(), i = state.sel, host = $('rSliders');
   const conf = SLIDERS[state.market].filter(c => d.X[c.f][i] != null && !(c.skip && c.skip(d, i)));
-  if (!conf.length) { host.innerHTML = '<p class="sub">This home is missing the details the sliders need.</p>'; return; }
+  if (!conf.length) { host.innerHTML = '<p class="fine">This record is missing the details the model needs for this.</p>'; return; }
   host.innerHTML = conf.map(c => {
     const raw = d.X[c.f][i];
     const ui = c.toUI ? c.toUI(raw) : raw;
     const min = Math.min(c.min(ui), ui), max = Math.max(c.max(ui), ui);
-    return `<div><div class="sl-head"><label for="sl-${c.f}">${c.label}</label><output id="out-${c.f}" for="sl-${c.f}">${c.fmt(ui)}</output></div>
-      <input type="range" id="sl-${c.f}" data-f="${c.f}" min="${min}" max="${max}" step="${c.step}" value="${ui}" data-orig="${ui}"></div>`;
+    return `<div class="sl"><label for="sl-${c.f}">${c.label}</label>
+      <input type="range" id="sl-${c.f}" data-f="${c.f}" min="${min}" max="${max}" step="${c.step}" value="${ui}" data-orig="${ui}">
+      <output id="out-${c.f}" for="sl-${c.f}">${c.fmt(ui)}</output></div>`;
   }).join('');
   host.querySelectorAll('input[type=range]').forEach(el => {
     const c = conf.find(x => x.f === el.dataset.f);
@@ -679,7 +682,7 @@ $('rCopy').addEventListener('click', async () => {
 
 function renderNearby() {
   const d = cur(), i = state.sel, ul = $('rNearby');
-  if (!d.has[i]) { ul.innerHTML = '<li class="sub">No location on file for this home.</li>'; return; }
+  if (!d.has[i]) { ul.innerHTML = '<li class="fine">No location on file for this home.</li>'; return; }
   let r = d.cell * 0.6, hits = [];
   for (let k = 0; k < 6 && hits.length < 7; k++, r *= 2) hits = d.near(d.wx[i], d.wy[i], r);
   hits = hits.filter(h => h[1] !== i).slice(0, 5);
@@ -687,7 +690,7 @@ function renderNearby() {
     const mi = Math.sqrt(dd) * 69;
     const dist = mi < 0.1 ? Math.round(mi * 5280 / 10) * 10 + ' ft' : mi.toFixed(1) + ' mi';
     const sq = d.H.sqft[j] ? ' · ' + fmtInt(d.H.sqft[j]) + ' sq ft' : '';
-    return `<li><button type="button" data-i="${j}"><span class="a">${esc(d.H.addr[j])}</span><span class="v num">${fmtUSD(d.H.est[j])}</span><small>${dist}${sq}</small><small class="num" style="text-align:right">county ${fmtShort(d.H.cv[j])}</small></button></li>`;
+    return `<li><button type="button" data-i="${j}"><span class="a">${esc(d.H.addr[j])}</span><span class="v num">${fmtUSD(d.H.est[j])}</span><small>${dist}${sq}</small><small class="num r">county ${fmtShort(d.H.cv[j])}</small></button></li>`;
   }).join('');
 }
 $('rNearby').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) selectHome(+b.dataset.i, { from: 'nearby', scroll: false }); });
@@ -700,85 +703,86 @@ function svg(w, h, body, label) { return `<svg viewBox="0 0 ${w} ${h}" role="img
 function errChart() {
   const s = state.summary && state.summary[state.market]; if (!s) return;
   const hst = s.err_hist, nb = NB[state.market];
-  const W = 520, Hh = 210, L = 8, R = 8, T = 10, B = 26;
+  const W = 520, Hh = 200, L = 4, R = 4, T = 8, B = 24;
   const n = hst.counts.length, bw = (W - L - R) / n, max = Math.max(...hst.counts);
   const xOf = p => L + (p - hst.lo) / (hst.hi - hst.lo) * (W - L - R);
   // (est - cv) / cv inside the band  <=>  cv in [est*e^lo, est*e^hi]
   const b0 = (Math.exp(-nb.bandHi) - 1) * 100, b1 = (Math.exp(-nb.bandLo) - 1) * 100;
-  let body = `<rect x="${xOf(b0)}" y="${T}" width="${xOf(b1) - xOf(b0)}" height="${Hh - T - B}" fill="var(--mkt-soft)" rx="4"/>`;
+  let body = `<rect x="${xOf(b0)}" y="${T}" width="${xOf(b1) - xOf(b0)}" height="${Hh - T - B}" fill="var(--tint)"/>`;
   hst.counts.forEach((c, k) => {
-    const h = c / max * (Hh - T - B - 6);
-    body += `<rect x="${(L + k * bw + 0.75).toFixed(1)}" y="${(Hh - B - h).toFixed(1)}" width="${(bw - 1.5).toFixed(1)}" height="${h.toFixed(1)}" rx="1.5" fill="var(--mkt)"/>`;
+    const h = c / max * (Hh - T - B - 4);
+    body += `<rect x="${(L + k * bw + 0.6).toFixed(1)}" y="${(Hh - B - h).toFixed(1)}" width="${(bw - 1.2).toFixed(1)}" height="${h.toFixed(1)}" fill="var(--mkt)"/>`;
   });
-  body += `<line x1="${xOf(0)}" x2="${xOf(0)}" y1="${T}" y2="${Hh - B}" stroke="var(--ink)" stroke-width="1"/>`;
-  for (const t of [-40, -20, 0, 20, 40]) body += `<text x="${xOf(t)}" y="${Hh - 8}" text-anchor="middle">${t > 0 ? '+' : ''}${t}%</text>`;
-  body += `<text x="${xOf(b1) + 6}" y="${T + 14}" class="strong">80% range</text>`;
-  $('errChart').innerHTML = svg(W, Hh, body, `Histogram of estimate errors for ${nb.name}; most homes fall between ${b0.toFixed(0)}% and +${b1.toFixed(0)}%.`);
-  $('errTitle').textContent = `How far off the ${nb.name} estimates are`;
+  body += `<line x1="${L}" x2="${W - R}" y1="${Hh - B}" y2="${Hh - B}" stroke="var(--ink)"/>`;
+  body += `<line x1="${xOf(0)}" x2="${xOf(0)}" y1="${T}" y2="${Hh - B}" stroke="var(--ink)" stroke-dasharray="2 3"/>`;
+  for (const t of [-40, -20, 0, 20, 40]) body += `<text x="${xOf(t)}" y="${Hh - 6}" text-anchor="middle">${t > 0 ? '+' : t < 0 ? '−' : ''}${Math.abs(t)}%</text>`;
+  body += `<text x="${xOf(b1) + 6}" y="${T + 12}">80% range</text>`;
+  $('errChart').innerHTML = svg(W, Hh, body, `Histogram of estimate errors for ${nb.name}; the 80% range runs from ${b0.toFixed(0)}% to +${b1.toFixed(0)}%.`);
+  $('errCap').innerHTML = `<b>Estimate vs. county value, ${nb.name}.</b> Each bar is 2 points wide; the shaded band is the 80% range. Misses past ±40% are piled into the end bars.`;
 }
 
 function covChart() {
   const nb = NB[state.market];
-  const W = 520, Hh = 210, L = 34, R = 8, T = 18, B = 26;
-  const n = 5, slot = (W - L - R) / n, bw = Math.min(56, slot * 0.56);
+  const W = 520, Hh = 200, L = 36, R = 4, T = 18, B = 24;
+  const n = 5, slot = (W - L - R) / n, bw = Math.min(46, slot * 0.5);
   const y = v => T + (1 - v) * (Hh - T - B);
   let body = '';
-  for (const t of [0, 0.5, 1]) body += `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="${L - 8}" y="${y(t) + 4}" text-anchor="end">${t * 100}%</text>`;
+  for (const t of [0.5, 1]) body += `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--rule)"/><text x="${L - 8}" y="${y(t) + 4}" text-anchor="end">${t * 100}%</text>`;
   nb.tiers.forEach((v, k) => {
     const x = L + k * slot + (slot - bw) / 2;
-    const low = v < 0.75;
-    body += `<rect x="${x}" y="${y(v)}" width="${bw}" height="${y(0) - y(v)}" rx="5" fill="var(--mkt)" opacity="${low ? 0.55 : 1}"/>`;
+    const short = v < 0.75;
+    body += `<rect x="${x}" y="${y(v)}" width="${bw}" height="${y(0) - y(v)}" fill="${short ? 'var(--down)' : 'var(--mkt)'}"/>`;
     body += `<text x="${x + bw / 2}" y="${y(v) - 6}" text-anchor="middle" class="strong">${Math.round(v * 100)}%</text>`;
-    body += `<text x="${x + bw / 2}" y="${Hh - 8}" text-anchor="middle">${TIERS[k]}</text>`;
+    body += `<text x="${x + bw / 2}" y="${Hh - 6}" text-anchor="middle">${TIERS[k]}</text>`;
   });
-  body += `<line x1="${L}" x2="${W - R}" y1="${y(0.8)}" y2="${y(0.8)}" stroke="var(--ink)" stroke-dasharray="4 4"/>`;
-  $('covChart').innerHTML = svg(W, Hh, body, `Share of ${nb.name} homes inside their 80% range by price tier: ${nb.tiers.map((v, k) => TIERS[k] + ' ' + Math.round(v * 100) + '%').join(', ')}. Dashed line marks the 80% target.`);
+  body += `<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--ink)"/>`;
+  body += `<line x1="${L}" x2="${W - R}" y1="${y(0.8)}" y2="${y(0.8)}" stroke="var(--ink)" stroke-dasharray="4 3"/><text x="${W - R}" y="${y(0.8) - 5}" text-anchor="end">target 80%</text>`;
+  $('covChart').innerHTML = svg(W, Hh, body, `Share of ${nb.name} homes inside their 80% range by price tier: ${nb.tiers.map((v, k) => TIERS[k] + ' ' + Math.round(v * 100) + '%').join(', ')}.`);
+  $('covCap').innerHTML = `<b>Does the range hold at every price?</b> Share of ${nb.name} homes whose county value lands inside their range, by price fifth. Red falls short of 80%.`;
 }
 
 function stepChart() {
   const nb = NB[state.market];
   const two = nb.steps[0].b !== undefined;
   const max = Math.max(...nb.steps.map(s => Math.max(s.a, s.b || 0)));
-  const bar = (v, cls) => `<div class="step-bar ${cls}"><div><i style="width:${(v / max * 100).toFixed(1)}%"></i></div><span>${v.toFixed(2)}%</span></div>`;
-  $('stepChart').innerHTML = `<div class="steps" role="list">` + nb.steps.map(s =>
-    `<div role="listitem"><div class="step-name">${esc(s.name)}</div>${bar(s.a, 'a')}${two ? bar(s.b, 'b') : ''}</div>`).join('') + '</div>';
-  $('stepTitle').textContent = `${nb.name}: median error as inputs were added`;
-  $('stepSub').textContent = two
-    ? 'Lower is better. Random folds test homes whose neighbors the model has seen; the second test holds out entire neighborhoods.'
-    : 'Lower is better. Taking away the county’s land value cost a little; building quality and location won most of it back.';
-  $('stepLegend').innerHTML = two
-    ? `<span><i style="background:var(--mkt)"></i>Random 5-fold</span><span><i style="background:var(--mkt);opacity:.35"></i>Whole neighborhoods held out</span>`
-    : `<span><i style="background:var(--mkt)"></i>Random 5-fold</span>`;
+  const bar = (v, cls) => `<div class="bar ${cls}"><span class="track"><i style="width:${(v / max * 100).toFixed(1)}%"></i></span><span>${v.toFixed(2)}%</span></div>`;
+  $('stepChart').innerHTML = `<thead><tr><th>Inputs (${esc(nb.name)})</th><th>Median error, random folds</th>${two ? '<th>Neighborhoods held out</th>' : ''}</tr></thead><tbody>` +
+    nb.steps.map(s => `<tr><td>${esc(s.name)}</td><td>${bar(s.a, 'a')}</td>${two ? `<td>${bar(s.b, 'b')}</td>` : ''}</tr>`).join('') + '</tbody>';
+  $('stepSub').innerHTML = two
+    ? '<b>What each step bought.</b> Random folds test homes whose neighbors the model has seen. Holding out whole neighborhoods is the harder test, and it is where the building details paid off most.'
+    : '<b>What each step bought.</b> Taking away the county’s land value cost a little. Construction grade, structure type and coordinates won most of it back.';
 }
 
 function scoreboard() {
   const a = NB.alpharetta, f = NB.forsyth;
   const rows = [
-    ['Median error', 'Half of estimates land closer than this', v => v.medape.toFixed(1) + '%'],
-    ['Within 10% of county value', 'Share of homes', v => v.w10.toFixed(1) + '%'],
-    ['Typical miss in dollars', 'Mean absolute error', v => fmtUSD(v.mae)],
-    ['R²', 'Share of value differences explained', v => v.r2.toFixed(3)],
-    ['80% range coverage', 'Checked on a held-out half of homes', v => (v.cov * 100).toFixed(1) + '%'],
-    ['Homes', 'After cleaning', v => fmtInt(v.n)],
+    ['Median error', 'half the estimates land closer than this', v => v.medape.toFixed(1) + '%'],
+    ['Within 10% of county value', '', v => v.w10.toFixed(1) + '%'],
+    ['Mean absolute error', 'the typical miss in dollars', v => fmtUSD(v.mae)],
+    ['R²', '', v => v.r2.toFixed(3)],
+    ['80% range coverage', 'checked on a held-out half of homes', v => (v.cov * 100).toFixed(1) + '%'],
+    ['Homes scored', '', v => fmtInt(v.n)],
   ];
   $('scoreboard').innerHTML =
-    `<div class="score-row head"><span></span><span><i class="dot" style="background:var(--alph)"></i>Alpharetta</span><span><i class="dot" style="background:var(--fors)"></i>Forsyth County</span></div>` +
-    rows.map(([k, s, fn]) => `<div class="score-row"><div class="k">${k}<small>${s}</small></div><div class="v">${fn(a)}</div><div class="v">${fn(f)}</div></div>`).join('');
+    `<thead><tr><th></th><th><span class="sw" style="background:var(--alph)"></span>Alpharetta</th><th><span class="sw" style="background:var(--fors)"></span>Forsyth County</th></tr></thead><tbody>` +
+    rows.map(([k, s, fn]) => `<tr><td>${k}${s ? `<small>${s}</small>` : ''}</td><td>${fn(a)}</td><td>${fn(f)}</td></tr>`).join('') + '</tbody>';
 }
 
 function caveats() {
   const nb = NB[state.market];
+  const top = Math.round(nb.tiers[4] * 100);
   const items = [
-    [Math.round(nb.tiers[4] * 100) + '%', 'Pricier homes are harder', `For the top 20% of ${nb.name} homes, the range catches the county value ${Math.round(nb.tiers[4] * 100)}% of the time instead of 80%. Treat estimates on expensive homes as looser than the range suggests.`],
+    `<b>The priciest homes.</b> For the top fifth of ${nb.name} homes by value, the range catches the county value ${top}% of the time, not 80%. Read estimates on expensive homes as looser than the range says.`,
   ];
   if (state.market === 'alpharetta') {
-    items.push(['15.6%', 'New neighborhoods are harder still', 'With whole neighborhoods held out, median error rises from 3.9% to 15.6%. The model leans heavily on having seen the neighbors.']);
-    items.push(['+' + Math.round((1 / nb.sales[2].cv - 1) * 100) + '%', 'County values trail the market', `2025 sales closed about ${Math.round((1 / nb.sales[2].cv - 1) * 100)}% above county value. The model predicts county value, so it trails by the same amount.`]);
+    const lag = Math.round((1 / nb.sales[2].cv - 1) * 100);
+    items.push('<b>Neighborhoods it hasn’t seen.</b> With whole neighborhoods held out, median error goes from 3.9% to 15.6%. The model leans hard on having priced the neighbors.');
+    items.push(`<b>The market has moved.</b> 2025 sales closed about ${lag}% above county value. The model predicts county value, so it trails the market by about as much.`);
   } else {
-    items.push([nb.mape.toFixed(1) + '%', 'A few big misses', `Average error is ${nb.mape.toFixed(1)}% against a ${nb.medape.toFixed(1)}% median: most homes are close, and a small set of unusual ones miss by a lot.`]);
-    items.push(['0', 'No sales check here', 'The Forsyth export has no sale records, so these estimates are compared only with county values. Alpharetta’s sales check shows county values trailing 2025 prices.']);
+    items.push(`<b>A few big misses.</b> Mean error is ${nb.mape.toFixed(1)}% against a ${nb.medape.toFixed(1)}% median: most homes are close, and a small group of unusual ones miss badly.`);
+    items.push('<b>No sales check.</b> The Forsyth export has no sale records, so these estimates are compared only with county values. The Alpharetta sales below show county values trailing 2025 prices.');
   }
-  $('caveats').innerHTML = items.map(([big, h, p]) => `<div class="caveat"><div class="big">${big}</div><h3>${h}</h3><p>${p}</p></div>`).join('');
+  $('caveats').innerHTML = items.map(t => `<li>${t}</li>`).join('');
 }
 
 function salesTable() {
@@ -815,7 +819,6 @@ function renderTable() {
   }).join('') || `<tr><td colspan="6" style="color:var(--ink-2)">No homes match “${esc(state.filter)}”.</td></tr>`;
   $('moreBtn').hidden = rows.length >= list.length;
   $('moreCount').textContent = `Showing ${fmtInt(rows.length)} of ${fmtInt(list.length)}`;
-  $('exploreTitle').textContent = `Browse every ${NB[state.market].name} home`;
 }
 $('homesBody').addEventListener('click', e => { const tr = e.target.closest('tr[data-i]'); if (tr) selectHome(+tr.dataset.i, { from: 'table' }); });
 $('homesBody').addEventListener('keydown', e => { if (e.key === 'Enter') { const tr = e.target.closest('tr[data-i]'); if (tr) selectHome(+tr.dataset.i, { from: 'table' }); } });
@@ -826,22 +829,12 @@ $('filter').addEventListener('input', e => { clearTimeout(filterT); filterT = se
 /* ============================================================
    Segmented controls
    ============================================================ */
-function segThumb(seg) {
-  const on = seg.querySelector('button[aria-pressed="true"]'), thumb = seg.querySelector('.thumb');
-  if (!on) return;
-  thumb.style.width = on.offsetWidth + 'px';
-  thumb.style.transform = `translateX(${on.offsetLeft}px)`;
-}
 function initSeg(seg, onPick) {
-  const thumb = seg.querySelector('.thumb');
-  segThumb(seg);
-  requestAnimationFrame(() => { thumb.style.transition = 'transform .38s var(--ease-out), width .38s var(--ease-out)'; });
   seg.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
     seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    segThumb(seg); onPick(b);
+    onPick(b);
   });
-  new ResizeObserver(() => segThumb(seg)).observe(seg);
 }
 initSeg($('marketSeg'), b => setMarket(b.dataset.market));
 initSeg($('sortSeg'), b => { state.sort = b.dataset.sort; state.shown = 25; renderTable(); });
@@ -849,20 +842,30 @@ initSeg($('sortSeg'), b => { state.sort = b.dataset.sort; state.shown = 25; rend
 /* ============================================================
    Market switching + boot
    ============================================================ */
+function renderStats(d) {
+  const nb = NB[d.market];
+  const cvs = d.H.cv.slice().sort((a, b) => a - b);
+  const rows = [
+    ['Homes', fmtInt(d.n)],
+    ['Median county value', fmtUSD(quantile(cvs, 0.5))],
+    ['Median estimate error', nb.medape.toFixed(1) + '%'],
+    ['Typical 80% range', `${fmtPct((d.lowMul - 1) * 100)} to ${fmtPct((d.highMul - 1) * 100)}`],
+    ['Tax year', String(TAX_YEAR)],
+  ];
+  $('stats').innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+}
 function setStatus(msg, error) { const s = $('status'); s.textContent = msg; s.classList.toggle('error', !!error); }
 
 async function setMarket(market, selectId) {
   state.market = market;
   document.body.dataset.market = market;
   $('marketSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.market === market)));
-  segThumb($('marketSeg'));
   const nb = NB[market];
-  $('heroPlace').textContent = nb.place;
-  $('heroLede').textContent = `Search any of ${fmtInt(nb.n)} homes for a model estimate, an honest range around it, and what drove the number.`;
   $('result').hidden = true; state.sel = -1;
   $('q').value = ''; search.items = []; renderSuggest();
   history.replaceState(null, '', '#' + market);
   errChart(); covChart(); stepChart(); caveats();
+  $('exploreTitle').textContent = `All ${nb.name} homes`;
 
   if (!state.data[market]) {
     $('q').disabled = true; $('tryRow').hidden = true; $('legend').hidden = true;
@@ -879,18 +882,21 @@ async function setMarket(market, selectId) {
   if (state.market !== market) return; // the user switched again while this loaded
   $('mapSkel').hidden = true; $('legend').hidden = false; $('q').disabled = false;
   setStatus('');
-  buildRamp(); sizeMap(); resetCam(false); renderTry(); renderTable();
+  buildRamp(); sizeMap(); resetCam(false); renderTry(); renderTable(); renderStats(d);
   if (selectId) {
     const i = d.H.id.indexOf(selectId);
     if (i >= 0) selectHome(i, { from: 'link' });
   }
 }
 
+function themeLabel() { $('themeBtn').textContent = isDark() ? 'Light' : 'Dark'; }
+themeLabel();
 $('themeBtn').addEventListener('click', () => {
   document.documentElement.dataset.theme = isDark() ? 'light' : 'dark';
+  themeLabel();
   buildRamp(); drawMap(); if (state.sel >= 0) { /* colors come from CSS vars */ }
 });
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { buildRamp(); drawMap(); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { themeLabel(); buildRamp(); drawMap(); });
 
 (async function boot() {
   scoreboard(); salesTable();
