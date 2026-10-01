@@ -3,77 +3,116 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>House Price Evaluation Model</title>
-<meta name="description" content="Estimated values, with a tested range, for 99,524 homes in Alpharetta and Forsyth County, Georgia. LightGBM models trained on county assessor records.">
+<title>Room to Spare</title>
+<meta name="description" content="Room to Spare: a home-buying worksheet for families in Alpharetta and Forsyth County, Georgia. Start from your monthly budget and see what a home would cost each month.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block" rel="stylesheet">
 <style>
 :root {
-  --bg: #fdfdfc;
-  --tint: #f2f2ef;
-  --ink: #1b1b1a;
-  --ink-2: #53534f;
-  --ink-3: #6f6f6a;
-  --rule: #dcdcd7;
-  --rule-2: #b9b9b3;
-  --focus: #1f5fbf;
-  --up: #1f6b3f;
-  --down: #a3321f;
+  /* Stitch "Counselor Worksheet" tokens */
+  --surface: #f8f9ff;
+  --surface-lowest: #ffffff;
+  --surface-low: #f0f4fd;
+  --surface-container: #eaeef8;
+  --surface-high: #e4e8f2;
+  --surface-highest: #dee2ec;
+  --on-surface: #171c23;
+  --on-surface-variant: #404945;
+  --outline: #67706c;
+  --outline-variant: #c0c8c4;
+  --primary: #053c31;
+  --on-primary: #ffffff;
+  --primary-container: #235347;
+  --primary-fixed: #bbeddd;
+  --primary-fixed-dim: #9fd1c1;
+  --on-primary-fixed-variant: #1e4f43;
+  --secondary: #9b4500;
+  --error: #ba1a1a;
+  --bar-glass: rgba(248, 249, 255, .9);
+  --shadow-sm: 0 1px 2px rgba(23, 28, 35, .06);
+
+  /* names the older home and how-it-works screens use */
+  --bg: var(--surface);
+  --tint: var(--surface-low);
+  --ink: var(--on-surface);
+  --ink-2: var(--on-surface-variant);
+  --ink-3: var(--outline);
+  --rule: var(--outline-variant);
+  --rule-2: var(--outline);
+  --focus: var(--primary-container);
+  --up: #1e6b52;
+  --down: var(--error);
   --alph: #2f6690;
-  --fors: #b3561f;
+  --fors: #9b4500;
   --mkt: var(--alph);
-  --hi: #f4e7a1;
-  --sans: "Public Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --hi: var(--primary-fixed);
+  --accent: var(--primary-container);
+  --sans: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --z-sticky: 10; --z-pop: 20; --z-tip: 30;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #131312; --tint: #1c1c1b; --ink: #ebebe7; --ink-2: #aeaea8; --ink-3: #93938d;
-    --rule: #2f2f2d; --rule-2: #4a4a47; --focus: #7aa7ec; --up: #6cc08e; --down: #ec8a78;
-    --alph: #74a9d6; --fors: #e39062; --hi: #4a4222;
+    --surface: #18191b; --surface-lowest: #212326; --surface-low: #1d1f22; --surface-container: #26292d; --surface-high: #2c3034; --surface-highest: #33373c;
+    --on-surface: #ededea; --on-surface-variant: #b4bac3; --outline: #9ba1ab; --outline-variant: #2f3338;
+    --primary: #9fd1c1; --on-primary: #0b201b; --primary-container: #4e8f7c; --primary-fixed: #1f3d36; --primary-fixed-dim: #2f5a50; --on-primary-fixed-variant: #9fd1c1;
+    --secondary: #f0a06a; --error: #ff8a80; --bar-glass: rgba(24, 25, 27, .9); --shadow-sm: 0 0 0 1px rgba(255,255,255,.04);
+    --up: #6cc08e; --alph: #74a9d6; --fors: #e39062;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #131312; --tint: #1c1c1b; --ink: #ebebe7; --ink-2: #aeaea8; --ink-3: #93938d;
-  --rule: #2f2f2d; --rule-2: #4a4a47; --focus: #7aa7ec; --up: #6cc08e; --down: #ec8a78;
-  --alph: #74a9d6; --fors: #e39062; --hi: #4a4222;
+  --surface: #18191b; --surface-lowest: #212326; --surface-low: #1d1f22; --surface-container: #26292d; --surface-high: #2c3034; --surface-highest: #33373c;
+  --on-surface: #ededea; --on-surface-variant: #b4bac3; --outline: #9ba1ab; --outline-variant: #2f3338;
+  --primary: #9fd1c1; --on-primary: #0b201b; --primary-container: #4e8f7c; --primary-fixed: #1f3d36; --primary-fixed-dim: #2f5a50; --on-primary-fixed-variant: #9fd1c1;
+  --secondary: #f0a06a; --error: #ff8a80; --bar-glass: rgba(24, 25, 27, .9); --shadow-sm: 0 0 0 1px rgba(255,255,255,.04);
+  --up: #6cc08e; --alph: #74a9d6; --fors: #e39062;
 }
 body[data-market="forsyth"] { --mkt: var(--fors); }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-padding-top: 52px; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 400 1rem/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 88px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 1rem/1.55 var(--sans); -webkit-font-smoothing: antialiased; padding-bottom: 112px; }
+.ms { font-family: "Material Symbols Outlined"; font-weight: normal; font-style: normal; font-size: 20px; line-height: 1; display: inline-block; white-space: nowrap; direction: ltr; -webkit-font-smoothing: antialiased; font-variation-settings: "FILL" 0, "wght" 400; user-select: none; }
+.ms.fill { font-variation-settings: "FILL" 1, "wght" 400; }
 h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
 p { margin: 0; text-wrap: pretty; }
 a { color: inherit; text-decoration-color: var(--rule-2); text-underline-offset: 3px; }
 a:hover { text-decoration-color: currentColor; }
 button { font: inherit; color: inherit; }
 .num { font-variant-numeric: tabular-nums; }
-.mono { font-family: var(--mono); font-size: .8125rem; letter-spacing: 0; }
+.mono { font-size: .8125rem; font-variant-numeric: tabular-nums; }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 28px; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .linkish { border: 0; background: none; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--rule-2); text-underline-offset: 3px; }
 .linkish:hover { text-decoration-color: currentColor; }
 
-/* ---------- masthead ---------- */
-.mast { position: sticky; top: 0; z-index: var(--z-sticky); background: var(--bg); border-bottom: 1px solid var(--ink); }
-.mast .wrap { display: flex; align-items: center; gap: 18px; height: 50px; }
-.mast .id { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-.mast .id img { height: 28px; width: auto; display: block; }
-.mast .id span { font-weight: 600; font-size: .9375rem; }
-.mast nav { margin-left: auto; display: flex; gap: 22px; font-size: .875rem; }
-.mast nav a { text-decoration: none; color: var(--ink-2); }
-.mast nav a:hover { color: var(--ink); text-decoration: underline; }
-.mast .theme { font-size: .8125rem; color: var(--ink-2); padding-left: 18px; border-left: 1px solid var(--rule); }
-:root[data-theme="dark"] .mast .id img, :root[data-theme="dark"] .foot-logo { filter: invert(1) hue-rotate(180deg); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mast .id img, :root:not([data-theme="light"]) .foot-logo { filter: invert(1) hue-rotate(180deg); } }
-@media (max-width: 860px) { .mast nav { display: none; } .mast .theme { margin-left: auto; } }
-@media (max-width: 480px) { .mast .id span { display: none; } }
+/* ---------- app header (Stitch) ---------- */
+.mast { position: sticky; top: 0; z-index: var(--z-sticky); background: var(--bar-glass); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); box-shadow: 0 1px 8px rgba(0,0,0,.04); }
+.mast-in { max-width: 840px; margin: 0 auto; height: 72px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.app-id { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; }
+.app-mark { width: 34px; height: 34px; display: grid; place-items: center; color: var(--primary); border: 1.5px solid var(--primary); border-radius: 4px; flex-shrink: 0; }
+.app-mark .ms { font-size: 22px; }
+.app-name { font-size: 16px; font-weight: 600; line-height: 22px; letter-spacing: -.005em; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-sub { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 11px; line-height: 14px; }
+.app-sub .caps { font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--outline); white-space: nowrap; }
+.app-sub .sep { color: var(--outline-variant); }
+.app-sub #screenName { font-size: 12px; color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.round-btn { width: 34px; height: 34px; border-radius: 999px; border: 0; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+.round-btn .ms { font-size: 18px; }
+.round-btn:active { transform: scale(.95); }
+
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sticky); background: var(--bar-glass); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); box-shadow: 0 -1px 8px rgba(0,0,0,.04); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.dock-note { margin: 0; padding: 4px 16px; text-align: center; font-size: 12px; line-height: 16px; letter-spacing: -.01em; color: var(--outline); background: var(--surface-low); }
+.tabs { max-width: 840px; margin: 0 auto; display: flex; justify-content: space-around; padding: 4px; }
+.tabs a { flex: 1; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px; text-decoration: none; color: var(--on-surface-variant); transition: color .15s; }
+.tabs a:hover { color: var(--on-surface); }
+.tabs a span:last-child { margin-top: 4px; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.tabs a[aria-current="page"] { color: var(--primary); }
+.tabs a[aria-current="page"] .ms { font-variation-settings: "FILL" 1, "wght" 500; }
 
 /* ---------- lookup ---------- */
 .lookup { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 48px; padding-top: 44px; padding-bottom: 36px; align-items: start; }
@@ -236,7 +275,7 @@ figure.fig figcaption b { color: var(--ink); font-weight: 600; }
 .notes { margin: 0; padding: 0; list-style: none; counter-reset: n; }
 .notes li { counter-increment: n; position: relative; padding: 14px 0 14px 34px; border-bottom: 1px solid var(--rule); max-width: 72ch; }
 .notes li:first-child { border-top: 1px solid var(--ink); }
-.notes li::before { content: counter(n); position: absolute; left: 0; top: 14px; font-family: var(--mono); font-size: .8125rem; color: var(--ink-3); }
+.notes li::before { content: counter(n); position: absolute; left: 0; top: 14px; font-size: .8125rem; font-variant-numeric: tabular-nums; color: var(--ink-3); }
 .notes b { font-weight: 600; }
 .lead { font-size: .9375rem; color: var(--ink-2); margin-bottom: 14px; max-width: 70ch; }
 .lead b { color: var(--ink); font-weight: 600; }
@@ -271,12 +310,150 @@ table.homes td:first-child { max-width: 300px; overflow: hidden; text-overflow: 
 .btn:hover { background: var(--ink); color: var(--bg); }
 
 /* ---------- footer ---------- */
-footer { border-top: 1px solid var(--ink); padding: 28px 0 48px; font-size: .875rem; color: var(--ink-2); }
-footer .wrap { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px 40px; align-items: start; }
+footer { border-top: 1px solid var(--outline-variant); background: var(--surface-low); padding: 24px 0 24px; font-size: .8125rem; color: var(--ink-2); }
+footer .wrap { max-width: 840px; padding: 0 16px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 24px; align-items: start; }
+:root[data-theme="dark"] .foot-logo { filter: invert(1) hue-rotate(180deg); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .foot-logo { filter: invert(1) hue-rotate(180deg); } }
 .foot-logo { height: 40px; width: auto; }
 footer p { max-width: 78ch; }
 footer p + p { margin-top: 8px; }
 footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
+
+
+
+/* ---------- homes settings + list ---------- */
+.filters-sheet { margin-top: 16px; }
+.lookup .stats { margin-top: 20px; }
+@media (min-width: 961px) { .mapfig { position: sticky; top: 88px; } }
+.homes-list { padding-bottom: 32px; display: grid; gap: 12px; max-width: 864px; }
+.homes-list .sorts { gap: 4px 16px; font-size: 14px; }
+.toggle-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--surface-low); border-radius: 4px; padding: 10px 12px; cursor: pointer; }
+.toggle-row b { display: block; font-size: 15px; font-weight: 600; }
+.toggle-row small { font-size: 12px; color: var(--outline); }
+.switch { -webkit-appearance: none; appearance: none; flex-shrink: 0; width: 44px; height: 26px; margin: 0; border-radius: 999px; background: var(--surface-highest); position: relative; cursor: pointer; transition: background-color .2s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .2s; }
+.switch:checked { background: var(--primary-container); }
+.switch:checked::after { transform: translateX(18px); }
+.fgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.fbox { background: var(--surface-low); border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fbox[hidden] { display: none; }
+.fbox.wide { grid-column: 1 / -1; }
+.fbox input, .fbox select { width: 100%; min-width: 0; height: 36px; padding: 0 8px; border: 1px solid var(--outline-variant); border-radius: 4px; background: var(--surface-lowest); color: var(--on-surface); font: 500 15px var(--sans); font-variant-numeric: tabular-nums; }
+.fbox input:focus, .fbox select:focus { outline: none; border-color: var(--on-surface); box-shadow: inset 0 0 0 .5px var(--on-surface); }
+.fbox input.invalid { border-color: var(--error); }
+.pair { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--outline); }
+.active-settings { margin: 0; font-size: 13px; color: var(--on-surface-variant); }
+.active-settings[hidden] { display: none; }
+.active-settings b { color: var(--on-surface); font-weight: 600; }
+.homelist { list-style: none; margin: 0; padding: 0; border-radius: 4px; overflow: hidden; }
+.homelist li + li { border-top: 1px solid var(--surface-container); }
+.homelist button { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; text-align: left; border: 0; padding: 10px 12px; background: var(--surface-low); cursor: pointer; transition: background-color .12s; }
+.homelist button:hover { background: var(--surface-container); }
+.homelist .a { font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.homelist .v { font-size: 15px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.homelist small { font-size: 12px; color: var(--outline); }
+.homelist small.r { text-align: right; }
+.homelist .partial { color: var(--secondary); }
+.homelist .empty { padding: 12px; font-size: 14px; color: var(--on-surface-variant); background: var(--surface-low); }
+
+/* ---------- detail screen ---------- */
+.detail-empty { max-width: 640px; padding-top: 40px; padding-bottom: 40px; }
+.detail-empty[hidden] { display: none; }
+.detail-empty p { margin-top: 6px; color: var(--on-surface-variant); }
+
+/* ---------- budget screen (Stitch) ---------- */
+[data-screen][hidden] { display: none !important; } /* beats each screen's own display rule */
+.screen.budget { max-width: 640px; margin: 0 auto; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 12px; }
+.t-hsm { font-size: 16px; line-height: 22px; font-weight: 600; letter-spacing: -.005em; }
+.t-bsm { font-size: 12px; line-height: 16px; letter-spacing: .01em; color: var(--on-surface-variant); }
+.t-label { font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--on-surface-variant); }
+.notice { background: var(--surface-low); border-radius: 8px; padding: 12px; box-shadow: var(--shadow-sm); }
+.notice-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.notice-main { display: flex; gap: 8px; align-items: flex-start; }
+.notice-main .ms { color: var(--primary); margin-top: 2px; }
+.notice-main .t-bsm { margin-top: 2px; }
+.btn-clear { flex-shrink: 0; border: 0; border-radius: 4px; padding: 4px 8px; background: var(--surface-container); color: var(--secondary); font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: background-color .15s, transform .1s; }
+.btn-clear:hover { background: var(--surface-highest); }
+.btn-clear:active { transform: scale(.95); }
+.notice-step { display: flex; align-items: center; gap: 4px; margin-top: 8px; padding-top: 4px; color: var(--primary); font-size: 12px; line-height: 16px; font-weight: 500; }
+.notice-step .ms { font-size: 16px; }
+.clear-note { margin-left: auto; color: var(--on-surface-variant); font-weight: 400; }
+.sheet { background: var(--surface-lowest); border-radius: 8px; padding: 12px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 12px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sheet-head h2 { display: flex; align-items: center; gap: 6px; margin: 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+.dot-b { background: var(--secondary); }
+.tag { font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--outline); background: var(--surface-container); padding: 2px 8px; border-radius: 2px; }
+.cutoff { color: var(--primary); text-align: right; white-space: nowrap; }
+#budgetForm { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.money-row { background: var(--surface-low); border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 4px; transition: background-color .15s; }
+.money-row:focus-within { background: var(--surface-container); }
+.money-label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.money-label label { font-size: 16px; line-height: 22px; font-weight: 600; letter-spacing: -.005em; }
+.money-label .hint { font-size: 12px; line-height: 16px; color: var(--outline); text-align: right; }
+.money-input { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 2px; }
+.amt { display: flex; align-items: baseline; gap: 4px; min-width: 0; }
+.amt .cur { font-size: 15px; font-weight: 500; color: var(--on-surface-variant); }
+.amt input { width: 9ch; min-width: 0; border: 0; padding: 0; background: transparent; font: 600 20px/26px var(--sans); letter-spacing: -.01em; color: var(--on-surface); font-variant-numeric: tabular-nums; outline: none; }
+.amt input::placeholder { color: var(--outline-variant); }
+.money-row.primary-row .amt input { color: var(--primary); }
+.amt .per { font-size: 12px; color: var(--outline); white-space: nowrap; }
+.steppers { display: flex; gap: 4px; flex-shrink: 0; }
+.steppers button { width: 40px; height: 40px; border: 0; border-radius: 4px; background: var(--surface-container); color: var(--on-surface-variant); display: grid; place-items: center; cursor: pointer; transition: background-color .12s, color .12s; }
+.steppers button:hover { background: var(--surface-high); }
+.steppers button:active { background: var(--primary); color: var(--on-primary); }
+.money-row.invalid { box-shadow: inset 0 0 0 1.5px var(--error); }
+.err { margin: 0; font-size: 12px; line-height: 16px; color: var(--error); }
+.err:empty { display: none; }
+.sub-label { margin: 6px 0 0; }
+.loan-row { background: var(--surface-container); border-radius: 4px; padding: 8px; display: flex; flex-direction: column; gap: 4px; color: var(--on-surface-variant); }
+.loan-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.loan-label { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; }
+.loan-label .ms { font-size: 16px; color: var(--primary); }
+.loan-fields { display: flex; gap: 8px; }
+.mini { display: flex; align-items: center; gap: 4px; background: var(--surface-lowest); border-radius: 4px; padding: 4px 8px; font-size: 12px; }
+.mini input { width: 5ch; border: 0; padding: 0; background: transparent; font: 600 15px/20px var(--sans); color: var(--on-surface); text-align: right; font-variant-numeric: tabular-nums; outline: none; }
+.mini:focus-within { box-shadow: inset 0 0 0 1.5px var(--on-surface); }
+.mini.invalid { box-shadow: inset 0 0 0 1.5px var(--error); }
+.loan-row .src { color: var(--on-surface-variant); }
+.bar-top { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 500; }
+.bar-top .strong { font-size: 15px; font-weight: 600; color: var(--primary); }
+.split-bar { display: flex; height: 16px; border-radius: 999px; overflow: hidden; background: var(--surface-high); }
+.split-bar span { display: block; height: 100%; width: 0; transition: width .3s ease-out; }
+.seg-costs { background: var(--outline); }
+.seg-housing { background: var(--primary-container); }
+.seg-left { background: var(--primary-fixed-dim); }
+.legend3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; text-align: center; }
+.legend3 .cell { background: var(--surface-low); border-radius: 2px; padding: 4px; display: flex; flex-direction: column; }
+.legend3 .cell.hl { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.legend3 .cell.hl .t-label, .legend3 .cell.hl b, .legend3 .cell.hl .t-bsm { color: var(--primary); }
+.legend3 .cell.soft { background: color-mix(in srgb, var(--primary-fixed) 30%, transparent); }
+.legend3 .cell.soft .t-label, .legend3 .cell.soft b { color: var(--on-primary-fixed-variant); }
+.legend3 .t-label { display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; overflow: hidden; }
+.legend3 i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend3 b { font-size: 15px; line-height: 20px; font-weight: 600; margin-top: 2px; }
+.narrative { margin: 0; display: flex; gap: 8px; align-items: flex-start; background: var(--surface-low); border-radius: 4px; padding: 8px; font-size: 12px; line-height: 16px; }
+.narrative[hidden] { display: none; }
+.narrative .ms { color: var(--primary); flex-shrink: 0; }
+.narrative strong { color: var(--primary); font-weight: 600; }
+.ledger-rows { border-radius: 4px; overflow: hidden; background: var(--surface-container); }
+.lr { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 12px; background: var(--surface-low); font-size: 14px; color: var(--on-surface-variant); }
+.lr[hidden] { display: none; }
+.lr.mid { background: var(--surface-container); color: var(--on-surface); font-weight: 500; }
+.lr.deep { background: var(--surface-high); color: var(--on-surface); font-weight: 500; }
+.lr small { display: block; font-size: 12px; line-height: 16px; font-weight: 400; color: var(--outline); }
+.lr b { font-size: 15px; font-weight: 600; color: var(--on-surface); white-space: nowrap; text-align: right; }
+.lr b.big { font-size: 16px; color: var(--primary); }
+.lr b.muted { color: var(--outline); font-weight: 500; }
+.cta { display: flex; align-items: center; justify-content: center; gap: 4px; height: 48px; border-radius: 4px; background: var(--primary); color: var(--on-primary); font-size: 16px; font-weight: 600; text-decoration: none; box-shadow: var(--shadow-sm); margin-top: 4px; transition: background-color .15s, transform .1s; }
+.cta:hover { background: var(--primary-container); color: #fff; }
+.cta:active { transform: scale(.98); }
+.cta-note { margin: 0; padding: 0 12px; text-align: center; font-size: 12px; line-height: 1.6; color: var(--outline); }
+@media (max-width: 380px) {
+  .money-label { flex-direction: column; gap: 0; }
+  .money-label .hint { text-align: left; }
+  .steppers button { width: 36px; }
+}
 
 /* ---------- responsive ---------- */
 @media (max-width: 960px) {
@@ -310,19 +487,136 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
 <body data-market="alpharetta">
 
 <header class="mast">
-  <div class="wrap">
-    <a class="id" href="#top"><img src="assets/logo.png" alt="Sahas Reddy Etikyala" width="67" height="28"><span>House Price Evaluation Model</span></a>
-    <nav aria-label="Sections">
-      <a href="#accuracy">Accuracy</a>
-      <a href="#v2">Changes in v2</a>
-      <a href="#explore">All homes</a>
-      <a href="https://github.com/sahasreddye-sys/house-price-evaluation-model" rel="noopener">Source</a>
-    </nav>
-    <button class="linkish theme" id="themeBtn" type="button">Dark</button>
+  <div class="mast-in">
+    <a class="app-id" href="#/budget">
+      <span class="app-mark" aria-hidden="true"><span class="ms">home</span></span>
+      <span style="min-width:0">
+        <span class="app-name" style="display:block">Room to Spare</span>
+        <span class="app-sub"><span id="screenName">Budget</span></span>
+      </span>
+    </a>
+    <button class="round-btn" id="themeBtn" type="button" aria-label="Switch to dark mode"><span class="ms">dark_mode</span></button>
   </div>
 </header>
 
 <main id="top">
+  <section class="screen budget" data-screen="budget" aria-labelledby="budgetTitle">
+    <h1 class="sr" id="budgetTitle">Your monthly budget</h1>
+    <div class="notice">
+      <div class="notice-top">
+        <div class="notice-main">
+          <span class="ms fill">shield_lock</span>
+          <div>
+            <p class="t-hsm">These numbers stay on this device</p>
+            <p class="t-bsm">Nothing you type here is sent anywhere or saved. Refreshing or closing the page clears it.</p>
+          </div>
+        </div>
+        <button class="btn-clear" type="button" id="clearBudget">Clear all</button>
+      </div>
+      <p class="notice-step"><span class="ms">info</span><span>Step 1 of 4: start with what your family earns and spends.</span><span class="clear-note" id="clearNote" role="status"></span></p>
+    </div>
+
+    <section class="sheet" aria-labelledby="secA">
+      <div class="sheet-head">
+        <h2 id="secA" class="t-label"><span class="dot"></span>Section A · Each month</h2>
+        <span class="tag">Your numbers</span>
+      </div>
+      <form id="budgetForm" autocomplete="off" novalidate>
+        <div class="money-row primary-row" data-field="takeHome">
+          <div class="money-label"><label for="b-takeHome">Take-home pay</label><span class="hint">After taxes and deductions</span></div>
+          <div class="money-input">
+            <div class="amt"><span class="cur">$</span><input id="b-takeHome" name="takeHome" inputmode="decimal" aria-describedby="b-takeHome-err"><span class="per">/ mo</span></div>
+            <div class="steppers"><button type="button" data-step="-100" data-for="b-takeHome" aria-label="Take-home pay minus $100"><span class="ms">remove</span></button><button type="button" data-step="100" data-for="b-takeHome" aria-label="Take-home pay plus $100"><span class="ms">add</span></button></div>
+          </div>
+          <p class="err" id="b-takeHome-err"></p>
+        </div>
+        <div class="money-row" data-field="debts">
+          <div class="money-label"><label for="b-debts">Debt payments</label><span class="hint">Car, student, card mins</span></div>
+          <div class="money-input">
+            <div class="amt"><span class="cur">$</span><input id="b-debts" name="debts" inputmode="decimal" aria-describedby="b-debts-err"><span class="per">/ mo</span></div>
+            <div class="steppers"><button type="button" data-step="-50" data-for="b-debts" aria-label="Debt payments minus $50"><span class="ms">remove</span></button><button type="button" data-step="50" data-for="b-debts" aria-label="Debt payments plus $50"><span class="ms">add</span></button></div>
+          </div>
+          <p class="err" id="b-debts-err"></p>
+        </div>
+        <div class="money-row" data-field="otherCosts">
+          <div class="money-label"><label for="b-otherCosts">Other regular costs</label><span class="hint">Childcare, food, utilities</span></div>
+          <div class="money-input">
+            <div class="amt"><span class="cur">$</span><input id="b-otherCosts" name="otherCosts" inputmode="decimal" aria-describedby="b-otherCosts-err"><span class="per">/ mo</span></div>
+            <div class="steppers"><button type="button" data-step="-50" data-for="b-otherCosts" aria-label="Other regular costs minus $50"><span class="ms">remove</span></button><button type="button" data-step="50" data-for="b-otherCosts" aria-label="Other regular costs plus $50"><span class="ms">add</span></button></div>
+          </div>
+          <p class="err" id="b-otherCosts-err"></p>
+        </div>
+        <div class="money-row" data-field="savings">
+          <div class="money-label"><label for="b-savings">Savings for buying</label><span class="hint">Down pmt &amp; closing</span></div>
+          <div class="money-input">
+            <div class="amt"><span class="cur">$</span><input id="b-savings" name="savings" inputmode="decimal" aria-describedby="b-savings-err"><span class="per">total</span></div>
+            <div class="steppers"><button type="button" data-step="-2500" data-for="b-savings" aria-label="Savings for buying minus $2,500"><span class="ms">remove</span></button><button type="button" data-step="2500" data-for="b-savings" aria-label="Savings for buying plus $2,500"><span class="ms">add</span></button></div>
+          </div>
+          <p class="err" id="b-savings-err"></p>
+        </div>
+
+        <p class="t-label sub-label">Optional</p>
+        <div class="money-row" data-field="grossMonthly">
+          <div class="money-label"><label for="b-grossMonthly">Pay before taxes</label><span class="hint">For the guideline line</span></div>
+          <div class="money-input">
+            <div class="amt"><span class="cur">$</span><input id="b-grossMonthly" name="grossMonthly" inputmode="decimal" aria-describedby="b-grossMonthly-err"><span class="per">/ mo</span></div>
+            <div class="steppers"><button type="button" data-step="-100" data-for="b-grossMonthly" aria-label="Pay before taxes minus $100"><span class="ms">remove</span></button><button type="button" data-step="100" data-for="b-grossMonthly" aria-label="Pay before taxes plus $100"><span class="ms">add</span></button></div>
+          </div>
+          <p class="err" id="b-grossMonthly-err"></p>
+        </div>
+        <div class="money-row" data-field="monthlySaving">
+          <div class="money-label"><label for="b-monthlySaving">Can save each month</label><span class="hint">For months to save</span></div>
+          <div class="money-input">
+            <div class="amt"><span class="cur">$</span><input id="b-monthlySaving" name="monthlySaving" inputmode="decimal" aria-describedby="b-monthlySaving-err"><span class="per">/ mo</span></div>
+            <div class="steppers"><button type="button" data-step="-50" data-for="b-monthlySaving" aria-label="Can save each month minus $50"><span class="ms">remove</span></button><button type="button" data-step="50" data-for="b-monthlySaving" aria-label="Can save each month plus $50"><span class="ms">add</span></button></div>
+          </div>
+          <p class="err" id="b-monthlySaving-err"></p>
+        </div>
+
+        <div class="loan-row">
+          <div class="loan-top">
+            <span class="loan-label"><span class="ms">finance_mode</span>Loan terms</span>
+            <span class="loan-fields">
+              <span class="mini" data-field="ratePercent"><input id="b-ratePercent" name="ratePercent" inputmode="decimal" aria-label="Interest rate, percent a year" aria-describedby="b-ratePercent-err b-ratePercent-src"><span>% a year</span></span>
+              <span class="mini" data-field="termYears"><input id="b-termYears" name="termYears" inputmode="numeric" aria-label="Loan length in years" aria-describedby="b-termYears-err b-termYears-src"><span>years</span></span>
+            </span>
+          </div>
+          <p class="t-bsm src" id="b-ratePercent-src">Rate: loading…</p>
+          <p class="t-bsm src" id="b-termYears-src">Length: loading…</p>
+          <p class="err" id="b-ratePercent-err"></p>
+          <p class="err" id="b-termYears-err"></p>
+        </div>
+      </form>
+    </section>
+
+    <section class="sheet" aria-labelledby="secB" aria-live="polite">
+      <div class="sheet-head">
+        <h2 id="secB" class="t-label"><span class="dot dot-b"></span>Section B · Where your pay goes</h2>
+        <span class="t-label cutoff" id="r-cutoffTag">Cutoff not set</span>
+      </div>
+      <div class="bar-top"><span>100% of monthly take-home pay</span><span class="num strong" id="r-takeHome">—</span></div>
+      <div class="split-bar" id="splitBar" role="img" aria-label="Take-home pay split will show here">
+        <span class="seg-costs" id="bar-costs"></span><span class="seg-housing" id="bar-housing"></span><span class="seg-left" id="bar-left"></span>
+      </div>
+      <div class="legend3">
+        <div class="cell"><span class="t-label"><i class="seg-costs"></i>Bills &amp; debt</span><b class="num" id="leg-costs">—</b><span class="t-bsm num" id="leg-costs-pct"></span></div>
+        <div class="cell hl"><span class="t-label"><i class="seg-housing"></i>Housing</span><b class="num" id="leg-housing">—</b><span class="t-bsm num" id="leg-housing-pct"></span></div>
+        <div class="cell soft"><span class="t-label"><i class="seg-left"></i>Left over</span><b class="num" id="leg-left">—</b><span class="t-bsm num" id="leg-left-pct"></span></div>
+      </div>
+      <p class="narrative" id="r-narrativeWrap" hidden><span class="ms">spa</span><span id="r-narrative"></span></p>
+      <div class="ledger-rows">
+        <div class="lr"><span>Money left before housing</span><b class="num" id="r-leftBeforeHousing">—</b></div>
+        <div class="lr mid"><span>Housing that leaves you comfortable<small id="r-comfortNote">Needs a comfort cutoff</small></span><b class="num big" id="r-comfortLimit">—</b></div>
+        <div class="lr" id="r-guidelineRow" hidden><span>Guideline reference<small id="r-guidelineNote"></small></span><b class="num" id="r-guideline">—</b></div>
+        <div class="lr deep"><span>Estimated price you could carry<small>Comes with the monthly cost step (needs tax and insurance sources)</small></span><b class="num muted">—</b></div>
+      </div>
+    </section>
+
+    <a class="cta" href="#/homes"><span>See homes</span><span class="ms">arrow_forward</span></a>
+    <p class="cta-note">The homes come from county records. They are not listings, and most are not for sale.</p>
+  </section>
+
+  <div data-screen="homes" hidden>
   <section class="wrap lookup">
     <div>
       <p class="intro">Estimated values for 99,524 homes in north Fulton and Forsyth County, Georgia, from 2025 county assessor records and a LightGBM model.</p>
@@ -337,6 +631,34 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
       </div>
       <p class="eg" id="tryRow" hidden></p>
       <p class="status" id="status" role="status">Loading homes…</p>
+      <form class="sheet filters-sheet" id="filters" autocomplete="off">
+        <div class="sheet-head">
+          <h2 class="t-label"><span class="dot"></span>Settings</h2>
+          <button class="btn-clear" type="button" id="fReset">Reset</button>
+        </div>
+        <label class="toggle-row" for="fNew">
+          <span><b>Only new homes</b><small>Built <span id="fNewYear">2023</span> or later</small></span>
+          <input type="checkbox" class="switch" id="fNew">
+        </label>
+        <div class="fgrid">
+          <div class="fbox"><span class="t-label">Estimate</span><span class="pair"><input id="fPriceMin" inputmode="numeric" placeholder="Min $" aria-label="Lowest estimate in dollars"><span>to</span><input id="fPriceMax" inputmode="numeric" placeholder="Max $" aria-label="Highest estimate in dollars"></span></div>
+          <div class="fbox"><span class="t-label">Size (sq ft)</span><span class="pair"><input id="fSqftMin" inputmode="numeric" placeholder="Min" aria-label="Smallest size in square feet"><span>to</span><input id="fSqftMax" inputmode="numeric" placeholder="Max" aria-label="Largest size in square feet"></span></div>
+          <div class="fbox"><span class="t-label">Lot (acres)</span><input id="fLotMin" inputmode="decimal" placeholder="At least" aria-label="Smallest lot in acres"></div>
+          <div class="fbox"><span class="t-label">Built in or after</span><input id="fYearMin" inputmode="numeric" placeholder="Any year" aria-label="Built in or after this year"></div>
+          <div class="fbox" data-needs="beds"><span class="t-label">Bedrooms</span><select id="fBeds"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+          <div class="fbox" data-needs="baths"><span class="t-label">Full baths</span><select id="fBaths"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+        </div>
+        <p class="t-label sub-label">Location</p>
+        <div class="fgrid">
+          <div class="fbox" data-needs="schools"><span class="t-label">Elementary</span><select id="fES"></select></div>
+          <div class="fbox" data-needs="schools"><span class="t-label">Middle</span><select id="fMS"></select></div>
+          <div class="fbox" data-needs="schools"><span class="t-label">High</span><select id="fHS"></select></div>
+          <div class="fbox wide"><span class="t-label">Subdivision or street</span><input id="fText" type="search" placeholder="e.g. Longstreet" aria-label="Subdivision or street name"></div>
+        </div>
+        <p class="t-bsm" id="fNote"></p>
+        <p class="err" id="fErr"></p>
+      </form>
+
       <dl class="stats" id="stats"></dl>
     </div>
 
@@ -353,11 +675,37 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
       </div>
       <figcaption>
         <span class="key" id="legend" hidden><span class="num" id="rampLo"></span><span class="ramp" id="ramp"></span><span class="num" id="rampHi"></span></span>
-        <span>One dot per home, shaded by estimate. Click one to open it.</span>
+        <span>Shaded by estimate. Homes outside your settings are greyed out. Click a dot to open it.</span>
       </figcaption>
     </figure>
   </section>
 
+  <section class="wrap homes-list" aria-label="Find homes">
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2 class="t-label"><span class="dot dot-b"></span>Homes</h2>
+        <span class="tag num" id="listCount">—</span>
+      </div>
+      <p class="t-bsm">From the <span id="listTaxYear">2025</span> county tax records. These are homes in the area, not listings, so most are not for sale. Brand-new homes may have been valued while still being built, so their estimates can come out too low.</p>
+      <div class="sorts" id="listSort" role="group" aria-label="Sort homes">
+        <button type="button" data-sort="newest" aria-pressed="true">Newest</button>
+        <button type="button" data-sort="low" aria-pressed="false">Lowest estimate</button>
+        <button type="button" data-sort="high" aria-pressed="false">Highest estimate</button>
+        <button type="button" data-sort="big" aria-pressed="false">Largest</button>
+      </div>
+      <p class="active-settings" id="activeSettings" hidden></p>
+      <ul class="homelist" id="homeList"></ul>
+      <p class="more"><button class="btn" type="button" id="listMore">Show 20 more</button><span id="listMoreCount"></span></p>
+    </div>
+  </section>
+
+  </div>
+
+  <div data-screen="detail" hidden>
+  <section class="wrap detail-empty" id="detailEmpty">
+    <h1 class="t-hsm">No home open yet</h1>
+    <p>Pick a home on the <a href="#/homes">Homes</a> tab, by address or on the map, and its details open here.</p>
+  </section>
   <section class="record" id="result" hidden aria-live="polite">
     <div class="wrap">
       <header class="rec-head">
@@ -408,7 +756,9 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
       </div>
     </div>
   </section>
+  </div>
 
+  <div data-screen="how" hidden>
   <section class="report" id="accuracy">
     <div class="wrap">
       <div class="side">
@@ -483,9 +833,10 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
       </div>
     </div>
   </section>
+  </div>
 </main>
 
-<footer>
+<footer class="app-foot">
   <div class="wrap">
     <img class="foot-logo" src="assets/logo.png" alt="Sahas Reddy Etikyala" width="96" height="40">
     <div>
@@ -496,6 +847,19 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
   </div>
 </footer>
 
+<div class="dock">
+  <p class="dock-note">Planning tool only. Not financial advice, a loan offer, or an appraisal.</p>
+  <nav class="tabs" aria-label="Screens">
+    <a href="#/budget" data-screen-link="budget"><span class="ms">account_balance_wallet</span><span>1. Budget</span></a>
+    <a href="#/homes" data-screen-link="homes"><span class="ms">holiday_village</span><span>2. Homes</span></a>
+    <a href="#/detail" data-screen-link="detail" id="tabDetail"><span class="ms">analytics</span><span>3. Detail</span></a>
+    <a href="#/how" data-screen-link="how"><span class="ms">rule</span><span>4. Method</span></a>
+  </nav>
+</div>
+
+<script src="assets/planner-math.js"></script>
+<script src="assets/budget-worksheet.js"></script>
+<script src="assets/screens.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

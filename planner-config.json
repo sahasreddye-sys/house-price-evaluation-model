@@ -1,0 +1,100 @@
+{
+  "_read_me": "Every number the planner uses that is not typed in by the family lives here. Each entry has value, unit, source and as_of. A value of null with source TODO means it has not been checked yet; the app shows 'not set yet' instead of guessing.",
+
+  "loan": {
+    "default_interest_rate": {
+      "value": null, "unit": "percent per year",
+      "source": "TODO", "as_of": "TODO",
+      "note": "Shown as the starting value in the budget form. Families can type their own rate either way."
+    },
+    "default_term_years": {
+      "value": null, "unit": "years",
+      "source": "TODO", "as_of": "TODO",
+      "note": "Shown as the starting value in the budget form."
+    }
+  },
+
+  "property_tax": {
+    "assessment_ratio": {
+      "value": null, "unit": "fraction of fair market value",
+      "source": "TODO", "as_of": "TODO",
+      "note": "Georgia taxes a share of a home's value. DESIGN.md mentions 40% but it needs a cited source."
+    },
+    "millage": {
+      "fulton_district_10": { "value": null, "unit": "mills (dollars per $1,000 of assessed value)", "source": "TODO", "as_of": "TODO", "note": "Covers 19,079 of the Alpharetta homes." },
+      "fulton_district_10A": { "value": null, "unit": "mills", "source": "TODO", "as_of": "TODO", "note": "2 homes." },
+      "fulton_district_45": { "value": null, "unit": "mills", "source": "TODO", "as_of": "TODO", "note": "187 homes." },
+      "fulton_district_56": { "value": null, "unit": "mills", "source": "TODO", "as_of": "TODO", "note": "112 homes." },
+      "fulton_district_57": { "value": null, "unit": "mills", "source": "TODO", "as_of": "TODO", "note": "180 homes." },
+      "forsyth_county": { "value": null, "unit": "mills", "source": "TODO", "as_of": "TODO", "note": "One rate for all Forsyth homes. The data has no tax district, so city vs. unincorporated can't be told apart." }
+    },
+    "homestead_exemption": {
+      "value": null, "unit": "dollars off assessed value",
+      "source": "TODO", "as_of": "TODO",
+      "note": "Only applies to a primary residence. Rules differ by county."
+    }
+  },
+
+  "insurance": {
+    "homeowners_annual": {
+      "value": null, "unit": "dollars per year",
+      "source": "TODO", "as_of": "TODO",
+      "note": "Could also be a percent of price; decide when the source is found."
+    }
+  },
+
+  "mortgage_insurance": {
+    "annual_rate": {
+      "value": null, "unit": "percent of loan amount per year",
+      "source": "TODO", "as_of": "TODO",
+      "note": "Real rates depend on credit score and down payment."
+    },
+    "required_below_down_payment_percent": {
+      "value": 20, "unit": "percent of price",
+      "source": "DESIGN.md section 6 (still needs an outside source)", "as_of": "2026-10-01",
+      "note": "Mortgage insurance is added when the down payment is under this."
+    }
+  },
+
+  "closing_costs": {
+    "percent_of_price": {
+      "value": null, "unit": "percent of price",
+      "source": "TODO", "as_of": "TODO",
+      "note": "Used for 'cash needed up front'."
+    }
+  },
+
+  "guidelines": {
+    "housing_share_of_gross_income": {
+      "value": null, "unit": "percent of gross monthly income",
+      "source": "TODO", "as_of": "TODO",
+      "note": "DESIGN.md mentions 28% and says to check it against HUD or CFPB before citing. Shown only as a reference line, never as a rule."
+    }
+  },
+
+  "comfort": {
+    "comfortable_min_left_percent": {
+      "value": null, "unit": "percent of take-home pay left after all monthly costs",
+      "source": "PLACEHOLDER: to be decided (DESIGN.md section 7)", "as_of": "TODO",
+      "note": "At or above this share left = Comfortable."
+    },
+    "stretching_below_left_percent": {
+      "value": null, "unit": "percent of take-home pay left after all monthly costs",
+      "source": "PLACEHOLDER: to be decided (DESIGN.md section 7)", "as_of": "TODO",
+      "note": "Below this share left = Stretching. Between the two = Tight."
+    },
+    "what_if_income_drop_percent": {
+      "value": 10, "unit": "percent",
+      "source": "DESIGN.md section 7", "as_of": "2026-10-01",
+      "note": "Design choice, not a statistic."
+    }
+  },
+
+  "sale_price_adjustment": {
+    "alpharetta_model_to_sale_ratio": {
+      "value": 0.780, "unit": "model estimate divided by sale price (median)",
+      "source": "housing_model_v2.ipynb, sales check cell: 308 Alpharetta sales in 2025 (warranty deed, land and building, $100k+)", "as_of": "2026-09-29",
+      "note": "Spread around this ratio was 22% (COD), so the adjusted range is rough. Not applied to Forsyth: no sales were tested there."
+    }
+  }
+}
