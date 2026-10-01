@@ -76,6 +76,11 @@ const NB = {
 };
 const TIERS = ['Lowest 20%', '20–40%', '40–60%', '60–80%', 'Top 20%'];
 const TAX_YEAR = 2025;
+// "New homes" = built in the last three years of the tax roll. Homes built in
+// the tax year itself may have been valued partway through construction.
+const NEW_HOME_FIRST_YEAR = TAX_YEAR - 2;
+const isNewHome = (d, i) => d.H.yr[i] >= NEW_HOME_FIRST_YEAR;
+const mayBePartlyBuilt = (d, i) => d.H.yr[i] >= TAX_YEAR;
 
 const LABELS = {
   LandAcres: 'Lot size', LivUnits: 'Living units', LUCode: 'Home type', NbrHood: 'Neighborhood',
@@ -171,6 +176,7 @@ class Spring {
 const state = {
   market: 'alpharetta', data: {}, summary: null, sel: -1, vec: null, base: 0, est: 0,
   sort: 'value', filter: '', shown: 25, loading: null,
+  listSort: 'newest', listShown: 20,
 };
 const cur = () => state.data[state.market];
 
@@ -251,7 +257,13 @@ function prepare(market, raw) {
 
 function loadMarket(market) {
   if (state.data[market]) return Promise.resolve(state.data[market]);
-  return fetchJSON(`data/${market}.json.gz`).then(raw => (state.data[market] = prepare(market, raw)));
+  const homes = fetchJSON(`data/${market}.json.gz`);
+  const schools = market === 'forsyth' ? fetchJSON('data/forsyth_schools.json.gz').catch(() => null) : Promise.resolve(null);
+  return Promise.all([homes, schools]).then(([raw, sch]) => {
+    const d = prepare(market, raw);
+    d.schools = sch;
+    return (state.data[market] = d);
+  });
 }
 
 /* ============================================================
@@ -282,7 +294,8 @@ function sizeMap() {
   map.dpr = Math.min(2, window.devicePixelRatio || 1);
   map.W = r.width; map.H = r.height;
   map.canvas.width = Math.round(r.width * map.dpr); map.canvas.height = Math.round(r.height * map.dpr);
-  const d = cur(); if (d) map.fit = fitScale(d);
+  const d = cur(); if (d && map.W > 0) map.fit = fitScale(d);
+  if (map.needsFit && map.W > 0) { resetCam(false); return; }
   drawMap();
 }
 function fitScale(d) {
@@ -291,6 +304,9 @@ function fitScale(d) {
 }
 function resetCam(animate) {
   const d = cur(); if (!d) return;
+  // the map can't be fitted while its screen is hidden (0 px wide); sizeMap does it once shown
+  if (map.W <= 0) { map.needsFit = true; return; }
+  map.needsFit = false;
   map.fit = fitScale(d);
   const b = d.bounds;
   const tx = (b.x0 + b.x1) / 2, ty = (b.y0 + b.y1) / 2;
@@ -316,9 +332,21 @@ function drawMap() {
   const W = map.W, Hh = map.H, s = map.cam.s, cx = map.cam.x - W / 2 / s, cy = map.cam.y - Hh / 2 / s;
   let lastB = -1;
   const round = r >= 2.4;
+  if (d.match) {
+    ctx.beginPath(); ctx.fillStyle = css('--outline-variant');
+    for (let k = 0; k < d.order.length; k++) {
+      const i = d.order[k];
+      if (d.match[i]) continue;
+      const x = (d.wx[i] - cx) * s, y = (d.wy[i] - cy) * s;
+      if (x < 0 || y < 0 || x > W || y > Hh) continue;
+      ctx.rect(x - 0.6, y - 0.6, 1.2, 1.2);
+    }
+    ctx.fill();
+  }
   ctx.beginPath();
   for (let k = 0; k < d.order.length; k++) {
     const i = d.order[k];
+    if (d.match && !d.match[i]) continue;
     const x = (d.wx[i] - cx) * s, y = (d.wy[i] - cy) * s;
     if (x < -r || y < -r || x > W + r || y > Hh + r) continue;
     const b = d.bucket[i];
@@ -343,8 +371,8 @@ function drawMap() {
 function pickAt(sx, sy, px = 10) {
   const d = cur(); if (!d) return -1;
   const [wx, wy] = toWorld(sx, sy);
-  const hit = d.near(wx, wy, px / map.cam.s);
-  return hit.length ? hit[hit.length ? 0 : 0][1] : -1;
+  const hit = d.near(wx, wy, px / map.cam.s).find(h => !d.match || d.match[h[1]]);
+  return hit ? hit[1] : -1;
 }
 function showTip(i, sx, sy) {
   const tip = $('tip'), d = cur();
@@ -526,19 +554,19 @@ function selectHome(i, opts = {}) {
   renderResult(opts);
   flyTo(i);
   requestDraw();
-  history.replaceState(null, '', `#${state.market}/${encodeURIComponent(d.H.id[i])}`);
-  if (opts.scroll !== false) {
-    const el = $('result');
-    const top = el.getBoundingClientRect().top;
-    if (opts.from !== 'map' || top > innerHeight * 0.7) {
-      requestAnimationFrame(() => el.scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start' }));
-    }
-  }
+  const homeLink = `#/home/${state.market}/${encodeURIComponent(d.H.id[i])}`;
+  $('tabDetail').href = homeLink;
+  // picking a home from another screen opens the Detail tab (and Back returns);
+  // switching homes while already on Detail just replaces the address
+  if (currentScreen === 'detail') history.replaceState(null, '', homeLink);
+  else location.hash = homeLink;
+  if (opts.scroll !== false) window.scrollTo(0, 0);
 }
 
 function renderResult() {
   const d = cur(), H = d.H, i = state.sel, market = state.market;
   $('result').hidden = false;
+  $('detailEmpty').hidden = true;
   $('rAddr').textContent = H.addr[i] || H.id[i];
   const use = market === 'alpharetta' ? (LU[d.useOf(i)] || d.useOf(i)) : titleCase(d.useOf(i));
   $('rParcel').textContent = 'Parcel ' + H.id[i].replace(/\s+/g, ' ');
@@ -554,6 +582,10 @@ function renderResult() {
   if (H.baths && H.baths[i] != null) facts.push(['Baths', H.baths[i] + (H.half[i] ? ` + ${H.half[i]} half` : '')]);
   if (H.floors[i] != null) facts.push([market === 'alpharetta' ? 'Stories' : 'Floors', H.floors[i]]);
   if (H.ac[i]) facts.push(['Lot', H.ac[i].toFixed(2) + ' ac']);
+  if (d.schools) {
+    const z = level => { const k = d.schools.home[level][i]; return k >= 0 ? titleCase(d.schools.levels[level][k]) : '—'; };
+    facts.push(['Elementary', z('ES')], ['Middle', z('MS')], ['High', z('HS')]);
+  }
   $('rFacts').innerHTML = facts.map(([k, v]) => `<div><dt>${k}</dt><dd class="num">${esc(v)}</dd></div>`).join('');
 
   renderDrivers();
@@ -562,7 +594,7 @@ function renderResult() {
   estSpring.snap(H.est[i]);
   updateEstimate(true);
 }
-function titleCase(s) { return String(s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\bSfr\b/, 'SFR').replace(/\bSf\b/, 'SF'); }
+function titleCase(s) { return String(s || '').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/\bSfr\b/, 'SFR').replace(/\bSf\b/, 'SF').replace(/\b(Es|Ms|Hs)$/, m => m.toUpperCase()); }
 
 function updateEstimate(initial) {
   const d = cur(), H = d.H, i = state.sel;
@@ -854,6 +886,150 @@ function renderStats(d) {
   ];
   $('stats').innerHTML = rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
 }
+/* ---------------- home settings (filters) and list ---------------- */
+// Settings are not budget data, but they still live only in memory.
+const homeFilters = {};
+const FILTER_INPUTS = ['fPriceMin', 'fPriceMax', 'fSqftMin', 'fSqftMax', 'fLotMin', 'fYearMin'];
+const SCHOOL_LEVELS = { fES: 'ES', fMS: 'MS', fHS: 'HS' };
+
+function setupFilters(d) {
+  $('fNewYear').textContent = NEW_HOME_FIRST_YEAR;
+  $('listTaxYear').textContent = TAX_YEAR;
+  const has = { beds: !!d.H.beds, baths: !!d.H.baths, schools: !!d.schools };
+  document.querySelectorAll('#filters [data-needs]').forEach(el => { el.hidden = !has[el.dataset.needs]; });
+  for (const [id, level] of Object.entries(SCHOOL_LEVELS)) {
+    const names = d.schools ? d.schools.levels[level] : [];
+    const order = names.map((n, k) => [n, k]).sort((a, b) => a[0].localeCompare(b[0]));
+    $(id).innerHTML = '<option value="">Any</option>' + order.map(([n, k]) => `<option value="${k}">${esc(titleCase(n))}</option>`).join('');
+  }
+  if (d.schools) $('fNote').textContent = `School zones come from Forsyth County GIS (updated ${d.schools.as_of.split(' ')[0]}). Zones can change, so check with the school district before deciding.`;
+  else if (d.market === 'forsyth') $('fNote').textContent = 'School zones couldn’t be loaded.';
+  else $('fNote').textContent = 'School zones are only set up for Forsyth County so far. Bedrooms and baths are only in the Alpharetta data.';
+}
+
+function readFilters() {
+  const f = { newOnly: $('fNew').checked };
+  let bad = false;
+  for (const id of FILTER_INPUTS) {
+    const v = PlannerMath.parseAmount($(id).value);
+    $(id).classList.toggle('invalid', Number.isNaN(v));
+    if (Number.isNaN(v)) bad = true;
+    f[id] = Number.isNaN(v) ? null : v;
+  }
+  f.beds = $('fBeds').value === '' ? null : +$('fBeds').value;
+  f.baths = $('fBaths').value === '' ? null : +$('fBaths').value;
+  for (const [id, level] of Object.entries(SCHOOL_LEVELS)) f[level] = $(id).value === '' ? null : +$(id).value;
+  // every word has to show up somewhere in the address or subdivision, in any order
+  f.words = $('fText').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  $('fErr').textContent = bad ? 'Use numbers only in the marked boxes. They are being ignored for now.' : '';
+  return f;
+}
+
+function homeMatches(d, i, f) {
+  const H = d.H;
+  if (f.newOnly && !isNewHome(d, i)) return false;
+  if (f.fPriceMin != null && H.est[i] < f.fPriceMin) return false;
+  if (f.fPriceMax != null && H.est[i] > f.fPriceMax) return false;
+  if (f.fSqftMin != null && !(H.sqft[i] >= f.fSqftMin)) return false;
+  if (f.fSqftMax != null && !(H.sqft[i] <= f.fSqftMax)) return false;
+  if (f.fLotMin != null && !(H.ac[i] >= f.fLotMin)) return false;
+  if (f.fYearMin != null && !(H.yr[i] >= f.fYearMin)) return false;
+  if (f.beds != null && H.beds && !(H.beds[i] >= f.beds)) return false;
+  if (f.baths != null && H.baths && !(H.baths[i] >= f.baths)) return false;
+  if (d.schools) for (const level of ['ES', 'MS', 'HS']) if (f[level] != null && d.schools.home[level][i] !== f[level]) return false;
+  if (f.words.length) {
+    const place = d.lower[i] + ' ' + d.subOf(i).toLowerCase();
+    if (!f.words.every(w => place.includes(w))) return false;
+  }
+  return true;
+}
+
+function applyFilters() {
+  const d = cur(); if (!d) return;
+  const f = readFilters();
+  const list = [];
+  const mask = new Uint8Array(d.n);
+  for (let i = 0; i < d.n; i++) if (homeMatches(d, i, f)) { mask[i] = 1; list.push(i); }
+  d.match = list.length === d.n ? null : mask; // null means "nothing filtered out"
+  d.matchList = list;
+  d.activeSettings = describeSettings(d, f);
+  // if the name search finds homes that the other settings then hide, say so
+  d.hiddenByOthers = 0;
+  if (!list.length && f.words.length && d.activeSettings.length > 1) {
+    const onlyWords = { ...readFiltersBlank(), words: f.words };
+    for (let i = 0; i < d.n; i++) if (homeMatches(d, i, onlyWords)) d.hiddenByOthers++;
+  }
+  state.listShown = 20;
+  renderHomeList();
+  map.hover = -1; drawMap();
+}
+
+function readFiltersBlank() {
+  return { newOnly: false, fPriceMin: null, fPriceMax: null, fSqftMin: null, fSqftMax: null, fLotMin: null, fYearMin: null,
+    beds: null, baths: null, ES: null, MS: null, HS: null, words: [] };
+}
+
+// Plain-words list of the settings that are on, shown above the list.
+function describeSettings(d, f) {
+  const range = (lo, hi, fmt) => lo != null && hi != null ? `${fmt(lo)}–${fmt(hi)}` : lo != null ? `${fmt(lo)}+` : `up to ${fmt(hi)}`;
+  const out = [];
+  if (f.newOnly) out.push(`Built ${NEW_HOME_FIRST_YEAR} or later`);
+  if (f.fPriceMin != null || f.fPriceMax != null) out.push('Estimate ' + range(f.fPriceMin, f.fPriceMax, fmtShort));
+  if (f.fSqftMin != null || f.fSqftMax != null) out.push(range(f.fSqftMin, f.fSqftMax, fmtInt) + ' sq ft');
+  if (f.fLotMin != null) out.push(`Lot ${f.fLotMin}+ acres`);
+  if (f.fYearMin != null) out.push(`Built ${f.fYearMin} or later`);
+  if (f.beds != null && d.H.beds) out.push(`${f.beds}+ bedrooms`);
+  if (f.baths != null && d.H.baths) out.push(`${f.baths}+ full baths`);
+  if (d.schools) for (const level of ['ES', 'MS', 'HS']) if (f[level] != null) out.push(titleCase(d.schools.levels[level][f[level]]));
+  if (f.words.length) out.push(`“${f.words.join(' ')}”`);
+  return out;
+}
+
+function renderHomeList() {
+  const d = cur(); if (!d || !d.matchList) return;
+  const on = d.activeSettings || [];
+  $('activeSettings').hidden = !on.length;
+  $('activeSettings').innerHTML = on.length ? `Settings on: <b>${on.map(esc).join(' · ')}</b>` : '';
+  const H = d.H;
+  const cmp = {
+    newest: (a, b) => (H.yr[b] || 0) - (H.yr[a] || 0) || H.est[b] - H.est[a],
+    low: (a, b) => H.est[a] - H.est[b],
+    high: (a, b) => H.est[b] - H.est[a],
+    big: (a, b) => (H.sqft[b] || 0) - (H.sqft[a] || 0),
+  }[state.listSort];
+  const list = d.matchList.slice().sort(cmp);
+  $('listCount').textContent = list.length === d.n ? `${fmtInt(d.n)} homes` : `${fmtInt(list.length)} of ${fmtInt(d.n)}`;
+  const rows = list.slice(0, state.listShown);
+  $('homeList').innerHTML = rows.map(i => {
+    const lo = round100(H.est[i] * d.lowMul), hi = round100(H.est[i] * d.highMul);
+    const size = [H.beds && H.beds[i] != null ? H.beds[i] + ' bd' : '', H.sqft[i] ? fmtInt(H.sqft[i]) + ' sq ft' : ''].filter(Boolean).join(' · ');
+    const bits = [H.yr[i] ? 'Built ' + H.yr[i] : '', size, d.subOf(i)].filter(Boolean).join(' · ');
+    const note = mayBePartlyBuilt(d, i)
+      ? '<small class="r partial">may be partly built</small>'
+      : `<small class="r">county ${fmtShort(H.cv[i])}</small>`;
+    return `<li><button type="button" data-i="${i}"><span class="a">${esc(H.addr[i] || H.id[i])}</span><span class="v">${fmtShort(lo)}–${fmtShort(hi)}</span><small>${esc(bits)}</small>${note}</button></li>`;
+  }).join('') || (d.hiddenByOthers
+    ? `<li class="empty">${fmtInt(d.hiddenByOthers)} homes match “${esc($('fText').value.trim())}”, but your other settings hide them. Loosen one of them, or press Reset.</li>`
+    : '<li class="empty">No homes match these settings. Try loosening one, or press Reset.</li>');
+  $('listMore').hidden = rows.length >= list.length;
+  $('listMoreCount').textContent = list.length ? `Showing ${fmtInt(rows.length)} of ${fmtInt(list.length)}` : '';
+}
+
+let filterTimer = 0;
+$('filters').addEventListener('input', () => { clearTimeout(filterTimer); filterTimer = setTimeout(applyFilters, 120); });
+$('filters').addEventListener('change', applyFilters);
+$('filters').addEventListener('submit', e => e.preventDefault());
+// browsers can refill these boxes after a reload; start clean so no setting is on without the user knowing
+$('filters').reset();
+window.addEventListener('pageshow', e => { if (e.persisted) { $('filters').reset(); applyFilters(); } });
+$('fReset').addEventListener('click', () => {
+  $('filters').querySelectorAll('input, select').forEach(el => { if (el.type === 'checkbox') el.checked = false; else el.value = ''; });
+  applyFilters();
+});
+$('homeList').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) selectHome(+b.dataset.i, { from: 'list' }); });
+$('listMore').addEventListener('click', () => { state.listShown += 20; renderHomeList(); });
+initSeg($('listSort'), b => { state.listSort = b.dataset.sort; state.listShown = 20; renderHomeList(); });
+
 function setStatus(msg, error) { const s = $('status'); s.textContent = msg; s.classList.toggle('error', !!error); }
 
 async function setMarket(market, selectId) {
@@ -861,9 +1037,10 @@ async function setMarket(market, selectId) {
   document.body.dataset.market = market;
   $('marketSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.market === market)));
   const nb = NB[market];
-  $('result').hidden = true; state.sel = -1;
+  $('result').hidden = true; $('detailEmpty').hidden = false; state.sel = -1;
+  $('tabDetail').href = '#/detail';
   $('q').value = ''; search.items = []; renderSuggest();
-  history.replaceState(null, '', '#' + market);
+  if (currentScreen === 'homes') history.replaceState(null, '', '#/homes/' + market);
   errChart(); covChart(); stepChart(); caveats();
   $('exploreTitle').textContent = `All ${nb.name} homes`;
 
@@ -883,13 +1060,17 @@ async function setMarket(market, selectId) {
   $('mapSkel').hidden = true; $('legend').hidden = false; $('q').disabled = false;
   setStatus('');
   buildRamp(); sizeMap(); resetCam(false); renderTry(); renderTable(); renderStats(d);
+  setupFilters(d); applyFilters();
   if (selectId) {
     const i = d.H.id.indexOf(selectId);
     if (i >= 0) selectHome(i, { from: 'link' });
   }
 }
 
-function themeLabel() { $('themeBtn').textContent = isDark() ? 'Light' : 'Dark'; }
+function themeLabel() {
+  $('themeBtn').querySelector('.ms').textContent = isDark() ? 'light_mode' : 'dark_mode';
+  $('themeBtn').setAttribute('aria-label', isDark() ? 'Switch to light mode' : 'Switch to dark mode');
+}
 themeLabel();
 $('themeBtn').addEventListener('click', () => {
   document.documentElement.dataset.theme = isDark() ? 'light' : 'dark';
@@ -901,9 +1082,15 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { th
 (async function boot() {
   scoreboard(); salesTable();
   fetchJSON('data/summary.json').then(s => { state.summary = s; errChart(); }).catch(() => {});
-  const m = location.hash.match(/^#(alpharetta|forsyth)(?:\/(.+))?$/);
-  const market = m ? m[1] : 'alpharetta';
-  await setMarket(market, m && m[2] ? decodeURIComponent(m[2]) : null);
+  const route = parseScreenRoute(location.hash);
+  await setMarket(route.market || 'alpharetta', route.id);
+  window.addEventListener('hashchange', () => {
+    const r = parseScreenRoute(location.hash);
+    if (!r.market) return;
+    if (r.market !== state.market) { setMarket(r.market, r.id); return; }
+    const d = cur(), i = r.id && d ? d.H.id.indexOf(r.id) : -1;
+    if (i >= 0 && i !== state.sel) selectHome(i, { from: 'link' });
+  });
 })();
 
 })();
