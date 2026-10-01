@@ -37,8 +37,8 @@ const PlannerMath = {
     return grossMonthly * guidelinePercent / 100;
   },
 
-  // STUDENT-WRITTEN: monthly principal + interest payment on a fixed-rate loan.
-  // See docs/loan-payment-step.md for what this needs to do.
+  // Monthly principal + interest payment on a fixed-rate loan (DESIGN.md section 6):
+  //   M = P * r * (1 + r)^n / ((1 + r)^n - 1)
   //
   //   loanAmount         dollars borrowed (price minus down payment), e.g. 200000
   //   annualRatePercent  yearly rate as a percent, e.g. 6.5 means 6.5%
@@ -47,7 +47,19 @@ const PlannerMath = {
   // Returns the payment in dollars, not rounded (the screen rounds it).
   // Returns null when the inputs can't make a real loan.
   monthlyLoanPayment(loanAmount, annualRatePercent, termYears) {
-    throw new Error('monthlyLoanPayment is not written yet. See docs/loan-payment-step.md');
+    if (loanAmount == null || annualRatePercent == null || termYears == null) return null;
+    if (loanAmount < 0 || annualRatePercent < 0) return null;
+    if (!Number.isInteger(termYears) || termYears <= 0) return null;
+
+    const P = loanAmount;
+    const r = annualRatePercent / 100 / 12; // yearly percent -> monthly decimal
+    const n = termYears * 12;               // years -> monthly payments
+
+    // at 0% the formula divides by zero; the loan is just split evenly
+    if (r === 0) return P / n;
+
+    const growth = (1 + r) ** n;
+    return P * r * growth / (growth - 1);
   },
 };
 
