@@ -1,6 +1,6 @@
-# Step: the monthly loan payment (you write this one)
+# The monthly loan payment
 
-**Goal:** fill in `monthlyLoanPayment` in `assets/planner-math.js` so every test in `tests/loan-payment.test.js` passes.
+`monthlyLoanPayment` in `assets/planner-math.js` works out the monthly payment on a fixed-rate loan. It was written with AI help (Claude) on 2026-10-01; the tests in `tests/loan-payment.test.js` check it. This page explains how it works.
 
 This is the first piece of the money math. The property tax, mortgage insurance and comfort label steps will build on it, so it has to be right.
 
@@ -63,14 +63,8 @@ node --test
 5. **"Pays the loan off":** pretends to make every payment (add a month of interest, subtract the payment) and checks the balance ends at $0. It catches a wrong formula even if a number in test 1 were wrong.
 6. **Common sense:** a higher rate means a higher payment, and a longer loan means a lower payment.
 
-## When you're done
+## For the AI-use disclosure
 
-Tell me, and I'll connect it to the screens. I won't change your function. If something in it looks off, I'll point to it and you fix it.
-
-## For your AI log
-
-Write down, in your own words:
-
-- That the test cases and this guide were made with AI help. The expected payments were computed with high-precision math and match common textbook examples, like $200,000 at 6% for 30 years being $1,199.10.
-- Which online calculator you used to double-check, and that it matched.
-- That you wrote `monthlyLoanPayment` yourself.
+- The function, its tests and this guide were written with AI help (Claude).
+- The expected payments were computed with high-precision math and match common textbook examples, like $200,000 at 6% for 30 years being $1,199.10.
+- Double-check one payment on an online mortgage calculator yourself and note which one you used.
