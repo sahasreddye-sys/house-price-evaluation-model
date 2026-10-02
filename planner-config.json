@@ -1,100 +1,167 @@
 {
-  "_read_me": "Every number the planner uses that is not typed in by the family lives here. Each entry has value, unit, source and as_of. A value of null with source TODO means it has not been checked yet; the app shows 'not set yet' instead of guessing.",
-
+  "_read_me": "Every number the planner uses that is not typed in by the family lives here. Each entry has value, unit, source and as_of. A value of null with source TODO means it has not been checked yet; the app shows 'not set yet' instead of guessing. Values filled on 2026-10-02 were found by Claude from the sources listed and still need Sahas to double-check.",
   "loan": {
     "default_interest_rate": {
-      "value": null, "unit": "percent per year",
-      "source": "TODO", "as_of": "TODO",
-      "note": "Shown as the starting value in the budget form. Families can type their own rate either way."
+      "value": 7.28,
+      "unit": "percent per year",
+      "source": "Freddie Mac Primary Mortgage Market Survey, 30-year fixed average: https://freddiemac.gcs-web.com/news-releases/news-release-details/mortgage-rates-average-728",
+      "as_of": "2026-10-01",
+      "note": "National weekly average. A family's real rate depends on credit, points and lender, so they can type their own. Update weekly or before the video.",
+      "cite": "Freddie Mac weekly rate survey"
     },
     "default_term_years": {
-      "value": null, "unit": "years",
-      "source": "TODO", "as_of": "TODO",
-      "note": "Shown as the starting value in the budget form."
+      "value": 30,
+      "unit": "years",
+      "source": "Matches the loan the rate above is for (Freddie Mac surveys the 30-year fixed)",
+      "as_of": "2026-10-01",
+      "note": "Families can change it.",
+      "cite": "the loan Freddie Mac surveys"
     }
   },
-
   "property_tax": {
     "assessment_ratio": {
-      "value": null, "unit": "fraction of fair market value",
-      "source": "TODO", "as_of": "TODO",
-      "note": "Georgia taxes a share of a home's value. DESIGN.md mentions 40% but it needs a cited source."
+      "value": 0.4,
+      "unit": "fraction of fair market value",
+      "source": "Georgia Department of Revenue, Property Tax Valuation (O.C.G.A. § 48-5-7): https://dor.georgia.gov/property-tax-valuation",
+      "as_of": "2026-10-02",
+      "note": "Property is assessed at 40% of fair market value unless the law says otherwise.",
+      "cite": "Georgia Department of Revenue"
     },
     "millage": {
-      "fulton_district_10": { "value": null, "unit": "mills (dollars per $1,000 of assessed value)", "source": "TODO", "as_of": "TODO", "note": "Covers 19,079 of the Alpharetta homes." },
-      "fulton_district_10A": { "value": null, "unit": "mills", "source": "TODO", "as_of": "TODO", "note": "2 homes." },
-      "fulton_district_45": { "value": null, "unit": "mills", "source": "TODO", "as_of": "TODO", "note": "187 homes." },
-      "fulton_district_56": { "value": null, "unit": "mills", "source": "TODO", "as_of": "TODO", "note": "112 homes." },
-      "fulton_district_57": { "value": null, "unit": "mills", "source": "TODO", "as_of": "TODO", "note": "180 homes." },
-      "forsyth_county": { "value": null, "unit": "mills", "source": "TODO", "as_of": "TODO", "note": "One rate for all Forsyth homes. The data has no tax district, so city vs. unincorporated can't be told apart." }
+      "fulton_district_10": {
+        "value": null,
+        "unit": "mills (dollars per $1,000 of assessed value)",
+        "source": "TODO",
+        "as_of": "TODO",
+        "note": "Covers 19,079 of the Alpharetta homes. Sources found so far disagree, so it's left unset: Fulton County general fund is 8.87 mills for 2025 (fultoncountyga.gov), but the school and city parts still need official pages."
+      },
+      "fulton_district_10A": {
+        "value": null,
+        "unit": "mills",
+        "source": "TODO",
+        "as_of": "TODO",
+        "note": "2 homes."
+      },
+      "fulton_district_45": {
+        "value": null,
+        "unit": "mills",
+        "source": "TODO",
+        "as_of": "TODO",
+        "note": "187 homes."
+      },
+      "fulton_district_56": {
+        "value": null,
+        "unit": "mills",
+        "source": "TODO",
+        "as_of": "TODO",
+        "note": "112 homes."
+      },
+      "fulton_district_57": {
+        "value": null,
+        "unit": "mills",
+        "source": "TODO",
+        "as_of": "TODO",
+        "note": "180 homes."
+      },
+      "forsyth_county": {
+        "value": 24.522,
+        "unit": "mills",
+        "source": "Forsyth County, 'Forsyth County Commission Adopts Millage Rates' (Aug 8, 2025): county 7.896 (M&O 4.791 + fire 2.805 + bond 0.300) + schools 16.626 (M&O 15.208 + bonds 1.418): https://www.forsythco.com/news/2025/08/forsyth-county-commission-adopts-millage-rates-2025/",
+        "as_of": "2025-08-08",
+        "note": "Unincorporated Forsyth. City of Cumming homes pay a city rate on top, which the data can't tell apart. For 2026 the county lowered its M&O rate to 4.727 (forsythco.com, Aug 2026); update once the 2026 school rate is confirmed on an official page.",
+        "cite": "Forsyth County, 2025 adopted rates"
+      }
     },
     "homestead_exemption": {
-      "value": null, "unit": "dollars off assessed value",
-      "source": "TODO", "as_of": "TODO",
-      "note": "Only applies to a primary residence. Rules differ by county."
+      "value": null,
+      "unit": "dollars off assessed value",
+      "source": "TODO",
+      "as_of": "TODO",
+      "note": "Not applied yet, so tax estimates run a little high for a primary residence. Rules differ by county and need an official source."
     }
   },
-
   "insurance": {
-    "homeowners_annual": {
-      "value": null, "unit": "dollars per year",
-      "source": "TODO", "as_of": "TODO",
-      "note": "Could also be a percent of price; decide when the source is found."
+    "homeowners_rate_per_1000": {
+      "value": 4.9,
+      "unit": "dollars per year per $1,000 of home value",
+      "source": "Freddie Mac Research, 'The Cost of Homeowners' Insurance' (Mar 20, 2024), 2023 national average for Freddie Mac borrowers: https://www.freddiemac.com/research/insight/homeowners-insurance-costs",
+      "as_of": "2024-03-20",
+      "note": "National, not Georgia, and premiums have risen since 2023. The home page lets a family type in a real quote instead.",
+      "cite": "Freddie Mac research, 2023 national average"
     }
   },
-
   "mortgage_insurance": {
-    "annual_rate": {
-      "value": null, "unit": "percent of loan amount per year",
-      "source": "TODO", "as_of": "TODO",
-      "note": "Real rates depend on credit score and down payment."
+    "monthly_per_100k": {
+      "value": 70,
+      "unit": "dollars per month per $100,000 borrowed",
+      "source": "My Home by Freddie Mac, 'Breaking down PMI': 'approximately between $30 and $70 per month for every $100,000 borrowed': https://myhome.freddiemac.com/buying/breaking-down-pmi",
+      "as_of": "2026-10-02",
+      "note": "Uses the high end of Freddie Mac's range so the plan doesn't come up short. Real cost depends on credit score and down payment.",
+      "cite": "Freddie Mac, high end of $30–$70"
     },
     "required_below_down_payment_percent": {
-      "value": 20, "unit": "percent of price",
-      "source": "DESIGN.md section 6 (still needs an outside source)", "as_of": "2026-10-01",
-      "note": "Mortgage insurance is added when the down payment is under this."
+      "value": 20,
+      "unit": "percent of price",
+      "source": "My Home by Freddie Mac, 'Breaking down PMI': required 'if you make a down payment less than 20%': https://myhome.freddiemac.com/buying/breaking-down-pmi",
+      "as_of": "2026-10-02",
+      "note": "Mortgage insurance is added when the down payment is under this.",
+      "cite": "Freddie Mac"
     }
   },
-
   "closing_costs": {
     "percent_of_price": {
-      "value": null, "unit": "percent of price",
-      "source": "TODO", "as_of": "TODO",
-      "note": "Used for 'cash needed up front'."
+      "value": 5,
+      "unit": "percent of price",
+      "source": "CFPB, 'Determine your down payment': 'closing costs (not including your down payment) range from 2-5% of the home purchase price': https://www.consumerfinance.gov/owning-a-home/prepare/determine-your-down-payment/",
+      "as_of": "2026-10-02",
+      "note": "Uses the high end of the CFPB range so the plan doesn't come up short. The same CFPB page says to subtract closing costs from your cash to get your down payment, which is how the planner does it.",
+      "cite": "CFPB, high end of 2–5%"
     }
   },
-
   "guidelines": {
     "housing_share_of_gross_income": {
-      "value": null, "unit": "percent of gross monthly income",
-      "source": "TODO", "as_of": "TODO",
-      "note": "DESIGN.md mentions 28% and says to check it against HUD or CFPB before citing. Shown only as a reference line, never as a rule."
+      "value": 28,
+      "unit": "percent of gross monthly income",
+      "source": "CFPB 'Buying a house: monthly payment worksheet': 'A mortgage lending rule of thumb is that your total monthly housing obligations should be no more than 28% of your pre-tax income': https://files.consumerfinance.gov/f/documents/cfpb_buying-a-house_monthly-payment_worksheet.pdf",
+      "as_of": "2026-10-02",
+      "note": "Shown only as a reference line, never as a rule.",
+      "cite": "CFPB rule of thumb"
     }
   },
-
   "comfort": {
     "comfortable_min_left_percent": {
-      "value": null, "unit": "percent of take-home pay left after all monthly costs",
-      "source": "PLACEHOLDER: to be decided (DESIGN.md section 7)", "as_of": "TODO",
-      "note": "At or above this share left = Comfortable."
+      "value": 20,
+      "unit": "percent of take-home pay left after all monthly costs",
+      "source": "Sahas's v3 spec draft (family_home_buying_planner_v3_specification.md, section 6). DESIGN.md section 7 says the cutoffs still need to be justified before launch.",
+      "as_of": "2026-10-02",
+      "note": "At or above this share left = Comfortable. PLACEHOLDER: Sahas to confirm or change.",
+      "cite": "placeholder from the v3 spec draft"
     },
     "stretching_below_left_percent": {
-      "value": null, "unit": "percent of take-home pay left after all monthly costs",
-      "source": "PLACEHOLDER: to be decided (DESIGN.md section 7)", "as_of": "TODO",
-      "note": "Below this share left = Stretching. Between the two = Tight."
+      "value": 10,
+      "unit": "percent of take-home pay left after all monthly costs",
+      "source": "Sahas's v3 spec draft (family_home_buying_planner_v3_specification.md, section 6). DESIGN.md section 7 says the cutoffs still need to be justified before launch.",
+      "as_of": "2026-10-02",
+      "note": "Below this share left = Stretching. Between the two = Tight. PLACEHOLDER: Sahas to confirm or change.",
+      "cite": "placeholder from the v3 spec draft"
     },
     "what_if_income_drop_percent": {
-      "value": 10, "unit": "percent",
-      "source": "DESIGN.md section 7", "as_of": "2026-10-01",
-      "note": "Design choice, not a statistic."
+      "value": 10,
+      "unit": "percent",
+      "source": "DESIGN.md section 7",
+      "as_of": "2026-10-01",
+      "note": "Design choice, not a statistic.",
+      "cite": "DESIGN.md"
     }
   },
-
   "sale_price_adjustment": {
     "alpharetta_model_to_sale_ratio": {
-      "value": 0.780, "unit": "model estimate divided by sale price (median)",
-      "source": "housing_model_v2.ipynb, sales check cell: 308 Alpharetta sales in 2025 (warranty deed, land and building, $100k+)", "as_of": "2026-09-29",
-      "note": "Spread around this ratio was 22% (COD), so the adjusted range is rough. Not applied to Forsyth: no sales were tested there."
+      "value": 0.78,
+      "unit": "model estimate divided by sale price (median)",
+      "source": "housing_model_v2.ipynb, sales check cell: 308 Alpharetta sales in 2025 (warranty deed, land and building, $100k+)",
+      "as_of": "2026-09-29",
+      "note": "Spread around this ratio was 22% (COD), so the adjusted range is rough. Not applied to Forsyth: no sales were tested there.",
+      "cite": "2025 Alpharetta sales check"
     }
   }
 }

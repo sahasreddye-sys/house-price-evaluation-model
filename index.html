@@ -345,6 +345,12 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
 .active-settings { margin: 0; font-size: 13px; color: var(--on-surface-variant); }
 .active-settings[hidden] { display: none; }
 .active-settings b { color: var(--on-surface); font-weight: 600; }
+.tight-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--on-surface-variant); padding: 0 4px; }
+.tight-row input { accent-color: var(--primary-container); width: 16px; height: 16px; margin: 0; }
+.homelist .fit { font-weight: 600; }
+.homelist .fit.Comfortable { color: var(--primary); }
+.homelist .fit.Tight { color: var(--secondary); }
+.homelist .fit.Stretching { color: var(--error); }
 .homelist { list-style: none; margin: 0; padding: 0; border-radius: 4px; overflow: hidden; }
 .homelist li + li { border-top: 1px solid var(--surface-container); }
 .homelist button { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; text-align: left; border: 0; padding: 10px 12px; background: var(--surface-low); cursor: pointer; transition: background-color .12s; }
@@ -355,6 +361,41 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
 .homelist small.r { text-align: right; }
 .homelist .partial { color: var(--secondary); }
 .homelist .empty { padding: 12px; font-size: 14px; color: var(--on-surface-variant); background: var(--surface-low); }
+
+/* ---------- detail: can your family pay for it ---------- */
+.afford { padding-top: 22px; }
+.aff-need { margin: 8px 0 0; padding: 10px 12px; border-radius: 4px; background: var(--surface-low); font-size: 14px; }
+.aff-need[hidden] { display: none; }
+.afford-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 0 40px; margin-top: 14px; }
+.aff-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.aff-field { display: flex; flex-direction: column; gap: 4px; background: var(--surface-low); border-radius: 4px; padding: 8px; font-size: 12px; color: var(--on-surface-variant); }
+.aff-field > span:first-child { font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+.aff-field em { font-style: normal; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.aff-box { display: flex; align-items: center; gap: 4px; font-size: 15px; color: var(--on-surface-variant); }
+.aff-box input { width: 100%; min-width: 0; height: 34px; padding: 0 6px; border: 1px solid var(--outline-variant); border-radius: 4px; background: var(--surface-lowest); color: var(--on-surface); font: 600 16px var(--sans); font-variant-numeric: tabular-nums; }
+.aff-box input:focus { outline: none; border-color: var(--on-surface); }
+.aff-box input.invalid { border-color: var(--error); }
+.aff-field small { font-size: 12px; line-height: 16px; color: var(--outline); }
+.aff-check { margin: 14px 0 0; font-size: 14px; line-height: 1.5; }
+.aff-table { margin-top: 12px; }
+.aff-table td { padding: 8px 0 8px 16px; }
+.aff-table td:first-child { padding-left: 0; }
+.aff-table tr.total td { border-top: 1.5px solid var(--on-surface); border-bottom: 0; font-weight: 700; font-size: 17px; }
+.aff-table td.missing { color: var(--secondary); font-size: 13px; }
+.aff-verdict { margin: 12px 0 10px; padding: 10px 12px; border-radius: 4px; background: var(--surface-low); font-size: 15px; line-height: 1.5; }
+.aff-verdict:empty { display: none; }
+.aff-verdict b.Comfortable { color: var(--primary); }
+.aff-verdict b.Tight { color: var(--secondary); }
+.aff-verdict b.Stretching { color: var(--error); }
+.aff-h { margin: 0 0 6px; font-size: 15px; font-weight: 600; padding-bottom: 6px; border-bottom: 1px solid var(--on-surface); }
+.aff-h + .ledger { margin-bottom: 18px; }
+.aff-toggle { margin-top: 10px; }
+@media (max-width: 960px) { .afford-grid { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+@media (max-width: 600px) { .aff-inputs { grid-template-columns: minmax(0, 1fr); } }
+@media print {
+  .mast, .dock, .no-print, .zoom, [data-screen="homes"], footer .aside { display: none !important; }
+  body { padding-bottom: 0; background: #fff; }
+}
 
 /* ---------- detail screen ---------- */
 .detail-empty { max-width: 640px; padding-top: 40px; padding-bottom: 40px; }
@@ -448,6 +489,13 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
 .cta { display: flex; align-items: center; justify-content: center; gap: 4px; height: 48px; border-radius: 4px; background: var(--primary); color: var(--on-primary); font-size: 16px; font-weight: 600; text-decoration: none; box-shadow: var(--shadow-sm); margin-top: 4px; transition: background-color .15s, transform .1s; }
 .cta:hover { background: var(--primary-container); color: #fff; }
 .cta:active { transform: scale(.98); }
+.btn-print { display: flex; align-items: center; justify-content: center; gap: 6px; height: 40px; border: 1px solid var(--on-surface); border-radius: 4px; background: transparent; color: var(--on-surface); font-size: 14px; font-weight: 500; cursor: pointer; }
+.btn-print:hover { background: var(--surface-low); }
+.btn-print .ms { font-size: 18px; }
+#costSources td:first-child { font-weight: 500; }
+#costSources td { vertical-align: top; }
+#costSources td.src { text-align: left; font-size: 13px; color: var(--on-surface-variant); max-width: 340px; }
+#costSources td.unset { color: var(--secondary); }
 .cta-note { margin: 0; padding: 0 12px; text-align: center; font-size: 12px; line-height: 1.6; color: var(--outline); }
 @media (max-width: 380px) {
   .money-label { flex-direction: column; gap: 0; }
@@ -608,11 +656,12 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
         <div class="lr"><span>Money left before housing</span><b class="num" id="r-leftBeforeHousing">—</b></div>
         <div class="lr mid"><span>Housing that leaves you comfortable<small id="r-comfortNote">Needs a comfort cutoff</small></span><b class="num big" id="r-comfortLimit">—</b></div>
         <div class="lr" id="r-guidelineRow" hidden><span>Guideline reference<small id="r-guidelineNote"></small></span><b class="num" id="r-guideline">—</b></div>
-        <div class="lr deep"><span>Estimated price you could carry<small>Comes with the monthly cost step (needs tax and insurance sources)</small></span><b class="num muted">—</b></div>
+        <div class="lr deep"><span>Price you could carry in Forsyth<small id="r-maxPriceNote">Needs take-home pay and a comfort cutoff</small></span><b class="num" id="r-maxPrice">—</b></div>
       </div>
     </section>
 
     <a class="cta" href="#/homes"><span>See homes</span><span class="ms">arrow_forward</span></a>
+    <button class="btn-print no-print" type="button" id="budgetPrint"><span class="ms">print</span>Print or save as PDF</button>
     <p class="cta-note">The homes come from county records. They are not listings, and most are not for sale.</p>
   </section>
 
@@ -636,7 +685,12 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
           <h2 class="t-label"><span class="dot"></span>Settings</h2>
           <button class="btn-clear" type="button" id="fReset">Reset</button>
         </div>
-        <label class="toggle-row" for="fNew">
+        <label class="toggle-row" for="fFits">
+        <span><b>Only homes that fit my budget</b><small id="fFitsNote">Uses your budget and each home’s estimate as the price</small></span>
+        <input type="checkbox" class="switch" id="fFits">
+      </label>
+      <label class="tight-row" for="fTight"><input type="checkbox" id="fTight"> Include homes that would be tight</label>
+      <label class="toggle-row" for="fNew">
           <span><b>Only new homes</b><small>Built <span id="fNewYear">2023</span> or later</small></span>
           <input type="checkbox" class="switch" id="fNew">
         </label>
@@ -720,6 +774,34 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
         </div>
       </header>
 
+      <section class="afford" aria-labelledby="affordTitle">
+        <h3 class="sec" id="affordTitle">Can your family pay for it? <button class="linkish no-print" type="button" id="affPrint" style="font-weight:400;font-size:.8125rem">Print or save as PDF</button></h3>
+        <p class="aff-need" id="affNeedBudget" hidden>Fill in your <a href="#/budget">budget</a> first. Then this shows what the home would leave you each month.</p>
+        <div class="afford-grid">
+          <div>
+            <div class="aff-inputs">
+              <label class="aff-field"><span>Price to check</span><span class="aff-box">$<input id="affPrice" inputmode="numeric" autocomplete="off"></span><small id="affPriceNote"></small></label>
+              <label class="aff-field"><span>Down payment</span><span class="aff-box">$<input id="affDown" inputmode="numeric" autocomplete="off"></span><small id="affDownNote"></small></label>
+              <label class="aff-field"><span>Insurance quote <em>(optional)</em></span><span class="aff-box">$<input id="affIns" inputmode="numeric" autocomplete="off" placeholder="per year"></span><small id="affInsNote"></small></label>
+            </div>
+            <p class="aff-check" id="affPriceCheck"></p>
+            <table class="aff-table" id="affTable"></table>
+            <p class="aff-verdict" id="affVerdict"></p>
+            <div class="split-bar" id="affBar" role="img"><span class="seg-costs" id="aff-bar-costs"></span><span class="seg-housing" id="aff-bar-home"></span><span class="seg-left" id="aff-bar-left"></span></div>
+            <p class="fine" id="affBarKey"></p>
+          </div>
+          <div>
+            <h4 class="aff-h">Cash needed up front</h4>
+            <dl class="ledger" id="affCash"></dl>
+            <h4 class="aff-h">What if</h4>
+            <div class="sl"><label for="affRate">Interest rate</label><input type="range" id="affRate" min="3" max="10" step="0.01"><output id="affRateOut" for="affRate"></output></div>
+            <label class="toggle-row aff-toggle" for="affDrop"><span><b>Income drops <span id="affDropPct">10</span>%</b><small id="affDropNote">Same costs, less take-home pay</small></span><input type="checkbox" class="switch" id="affDrop"></label>
+            <p class="fine" id="affWhatIfNote"></p>
+            <p class="fine no-print"><a id="affSearch" href="#" target="_blank" rel="noopener">Look this address up online ↗</a> to see if it's listed for sale.</p>
+          </div>
+        </div>
+      </section>
+
       <div class="rec-body">
         <div>
           <div class="val">
@@ -759,6 +841,29 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
   </div>
 
   <div data-screen="how" hidden>
+  <section class="report" id="costs">
+    <div class="wrap">
+      <div class="side">
+        <h2>How the monthly cost works</h2>
+        <p>Everything a home costs each month, added up. Each number below comes from the source listed, and the planner never fills in a number it doesn’t have a source for.</p>
+      </div>
+      <div class="main">
+        <ol class="notes">
+          <li><b>Loan payment.</b> The standard fixed-rate formula: payment = P × r × (1 + r)<sup>n</sup> ÷ ((1 + r)<sup>n</sup> − 1), where P is the loan, r the monthly rate and n the number of months.</li>
+          <li><b>Property tax.</b> Georgia taxes 40% of a home’s value, times the local millage rate (dollars per $1,000), divided by 12.</li>
+          <li><b>Home insurance.</b> An average cost per $1,000 of value, unless you type in a real quote.</li>
+          <li><b>Mortgage insurance.</b> Only when the down payment is under 20%.</li>
+          <li><b>Down payment.</b> Your savings minus closing costs, the way the CFPB suggests working it out.</li>
+          <li><b>Comfort label.</b> What’s left of take-home pay after every monthly bill, including the home. Comfortable means at least the first cutoff is left; stretching means less than the second.</li>
+        </ol>
+        <div>
+          <p class="lead"><b>The numbers and where they come from.</b> They live in <code>planner-config.json</code>. “Not set yet” means no official source has been found.</p>
+          <div class="table-wrap"><table id="costSources"></table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="report" id="accuracy">
     <div class="wrap">
       <div class="side">
