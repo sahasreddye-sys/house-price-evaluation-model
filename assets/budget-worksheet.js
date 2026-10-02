@@ -259,7 +259,7 @@ const BUDGET_FIELDS = {
   byId('clearBudget').addEventListener('click', clearBudget);
 
   render();
-  fetch('planner-config.json')
+  fetch('planner-config.json?v=' + (typeof ASSET_VERSION === 'string' ? ASSET_VERSION : ''))
     .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then(config => { plannerConfig = config; applyDefaults(); render(); })
     .catch(() => {
