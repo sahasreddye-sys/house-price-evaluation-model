@@ -61,6 +61,97 @@ const PlannerMath = {
     const growth = (1 + r) ** n;
     return P * r * growth / (growth - 1);
   },
+
+  // Georgia taxes an "assessed value" (a share of the price, minus any
+  // exemption) at the local millage rate. One mill = $1 per $1,000.
+  //   yearly tax = (price * assessmentRatio - exemption) * mills / 1000
+  monthlyPropertyTax(price, assessmentRatio, mills, exemption = 0) {
+    if (price == null || assessmentRatio == null || mills == null) return null;
+    const assessed = Math.max(0, price * assessmentRatio - (exemption || 0));
+    return assessed * mills / 1000 / 12;
+  },
+
+  monthlyHomeInsurance(price, dollarsPerThousandPerYear) {
+    if (price == null || dollarsPerThousandPerYear == null) return null;
+    return price / 1000 * dollarsPerThousandPerYear / 12;
+  },
+
+  // Only charged when the down payment is under `requiredBelowPercent` of the price.
+  monthlyMortgageInsurance(loanAmount, price, downPayment, perHundredThousandMonthly, requiredBelowPercent) {
+    if (requiredBelowPercent == null || price == null) return null;
+    if (price <= 0 || loanAmount <= 0) return 0; // nothing borrowed, nothing to insure
+    if (downPayment / price * 100 >= requiredBelowPercent) return 0;
+    if (perHundredThousandMonthly == null) return null;
+    return loanAmount / 100000 * perHundredThousandMonthly;
+  },
+
+  closingCosts(price, percentOfPrice) {
+    if (price == null || percentOfPrice == null) return null;
+    return price * percentOfPrice / 100;
+  },
+
+  // CFPB method: whatever cash is left after closing costs can go to the down payment.
+  downPaymentFromSavings(savings, price, closingPercent) {
+    const closing = PlannerMath.closingCosts(price, closingPercent);
+    if (savings == null || closing == null) return null;
+    return Math.min(price, Math.max(0, savings - closing));
+  },
+
+  // Everything paid each month for the home. Any piece that can't be worked out
+  // (a missing rate or source) comes back null and is listed in `missing`, and
+  // the total is null too, so the app never shows a total with a part left out.
+  //   c = { price, downPayment, ratePercent, termYears, assessmentRatio, mills,
+  //         exemption, insurancePer1000, insuranceMonthly (a typed quote, optional),
+  //         pmiPer100k, pmiRequiredBelowPercent }
+  monthlyHousingCost(c) {
+    const loan = Math.max(0, c.price - c.downPayment);
+    const parts = {
+      loanPayment: PlannerMath.monthlyLoanPayment(loan, c.ratePercent, c.termYears),
+      propertyTax: PlannerMath.monthlyPropertyTax(c.price, c.assessmentRatio, c.mills, c.exemption),
+      homeInsurance: c.insuranceMonthly != null ? c.insuranceMonthly : PlannerMath.monthlyHomeInsurance(c.price, c.insurancePer1000),
+      mortgageInsurance: PlannerMath.monthlyMortgageInsurance(loan, c.price, c.downPayment, c.pmiPer100k, c.pmiRequiredBelowPercent),
+    };
+    const missing = Object.keys(parts).filter(k => parts[k] == null);
+    const total = missing.length ? null : Object.values(parts).reduce((a, b) => a + b, 0);
+    return { loan, ...parts, total, missing };
+  },
+
+  // Share of take-home pay left after every monthly cost, as a percent.
+  leftAfterHousingPercent(takeHome, debts, otherCosts, housing) {
+    if (!takeHome || housing == null) return null;
+    return (takeHome - (debts || 0) - (otherCosts || 0) - housing) / takeHome * 100;
+  },
+
+  // DESIGN.md section 7: comfortable at or above the first cutoff, stretching
+  // below the second, tight in between.
+  comfortLabel(leftPercent, comfortableMin, stretchingBelow) {
+    if (leftPercent == null || comfortableMin == null || stretchingBelow == null) return null;
+    if (leftPercent >= comfortableMin) return 'Comfortable';
+    if (leftPercent < stretchingBelow) return 'Stretching';
+    return 'Tight';
+  },
+
+  // The highest price whose full monthly cost stays at or under `targetMonthly`.
+  // Cost only goes up as price goes up (bigger loan, more tax, and a smaller
+  // down payment once closing costs grow), so a binary search works.
+  // `costAt(price)` returns the monthly total for that price.
+  maxPriceForMonthly(targetMonthly, costAt, highestPrice = 10000000) {
+    if (targetMonthly == null || targetMonthly <= 0) return 0;
+    if (costAt(0) == null) return null;
+    let lo = 0, hi = highestPrice;
+    if (costAt(hi) <= targetMonthly) return hi;
+    while (hi - lo > 100) {
+      const mid = (lo + hi) / 2;
+      if (costAt(mid) <= targetMonthly) lo = mid; else hi = mid;
+    }
+    return Math.floor(lo / 100) * 100;
+  },
+
+  monthsToSave(shortfall, savedPerMonth) {
+    if (shortfall == null || shortfall <= 0) return 0;
+    if (!savedPerMonth) return null;
+    return Math.ceil(shortfall / savedPerMonth);
+  },
 };
 
 if (typeof module !== 'undefined') module.exports = PlannerMath;

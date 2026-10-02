@@ -18,6 +18,44 @@ const familyBudget = {
 
 let plannerConfig = null; // planner-config.json, loaded once
 
+// Reads one entry from planner-config.json, e.g. plannerSetting('loan.default_interest_rate').
+function plannerSetting(path) {
+  let node = plannerConfig;
+  for (const key of path.split('.')) node = node && node[key];
+  return node || { value: null, source: 'TODO' };
+}
+
+// Everything the monthly cost needs besides the price and down payment.
+// The family's own rate and loan length win over the config defaults.
+function homeCostSettings(market) {
+  const v = path => plannerSetting(path).value;
+  return {
+    ratePercent: familyBudget.ratePercent ?? v('loan.default_interest_rate'),
+    termYears: familyBudget.termYears ?? v('loan.default_term_years'),
+    assessmentRatio: v('property_tax.assessment_ratio'),
+    // the Alpharetta data has no tax district per home yet, so only Forsyth has a rate
+    mills: market === 'forsyth' ? v('property_tax.millage.forsyth_county') : null,
+    exemption: v('property_tax.homestead_exemption') || 0,
+    insurancePer1000: v('insurance.homeowners_rate_per_1000'),
+    pmiPer100k: v('mortgage_insurance.monthly_per_100k'),
+    pmiRequiredBelowPercent: v('mortgage_insurance.required_below_down_payment_percent'),
+    closingPercent: v('closing_costs.percent_of_price'),
+  };
+}
+
+// Monthly cost of one home for this family, with the down payment taken from
+// their savings after closing costs unless a down payment is given.
+function familyHomeCost(market, price, downPayment) {
+  const s = homeCostSettings(market);
+  const down = downPayment ?? PlannerMath.downPaymentFromSavings(familyBudget.savings || 0, price, s.closingPercent) ?? 0;
+  return PlannerMath.monthlyHousingCost({ ...s, price, downPayment: down });
+}
+
+function budgetIsFilledIn() { return familyBudget.takeHome != null; }
+
+// Other screens listen for this to redraw when the budget or config changes.
+function announceBudgetChange() { window.dispatchEvent(new Event('budgetchange')); }
+
 const BUDGET_FIELDS = {
   takeHome: {},
   debts: {},
@@ -55,15 +93,11 @@ const BUDGET_FIELDS = {
     return !problem;
   }
 
-  function configValue(path) {
-    let node = plannerConfig;
-    for (const key of path.split('.')) node = node && node[key];
-    return node || { value: null, source: 'TODO' };
-  }
+  const configValue = plannerSetting;
 
   function sourceLine(label, entry, unitText) {
     if (entry.value == null) return `${label}: no starting value yet (TODO in planner-config.json). Type your own.`;
-    return `${label}: starts at ${entry.value}${unitText} (${entry.source}, ${entry.as_of})`;
+    return `${label}: starts at ${entry.value}${unitText} (${entry.cite || entry.source}, ${entry.as_of})`;
   }
 
   function applyDefaults() {
@@ -93,6 +127,8 @@ const BUDGET_FIELDS = {
       byId('r-comfortNote').textContent = keepPercent == null ? 'Needs a comfort cutoff' : waitText;
       byId('r-narrativeWrap').hidden = true;
       renderSplit(null);
+      renderMaxPrice(null);
+      announceBudgetChange();
       return;
     }
 
@@ -120,6 +156,25 @@ const BUDGET_FIELDS = {
     }
     byId('r-narrativeWrap').hidden = false;
     renderSplit(b.takeHome, Math.min(costs, b.takeHome), left > 0 ? limit : 0);
+    renderMaxPrice(left > 0 ? limit : 0);
+    announceBudgetChange();
+  }
+
+  // The most a Forsyth home could cost and still keep the comfortable amount
+  // free each month, with the down payment coming out of savings.
+  function renderMaxPrice(limit) {
+    const s = homeCostSettings('forsyth');
+    const note = byId('r-maxPriceNote');
+    if (limit == null) { setText('r-maxPrice', '—'); note.textContent = 'Needs take-home pay and a comfort cutoff'; return; }
+    if (s.ratePercent == null || s.termYears == null) { setText('r-maxPrice', '—'); note.textContent = 'Needs an interest rate and loan length'; return; }
+    const costAt = price => familyHomeCost('forsyth', price).total;
+    const price = PlannerMath.maxPriceForMonthly(limit, costAt);
+    if (price == null) { setText('r-maxPrice', '—'); note.textContent = 'A cost source is still missing in planner-config.json'; return; }
+    setText('r-maxPrice', price > 0 ? 'about ' + money(price) : '$0');
+    const down = PlannerMath.downPaymentFromSavings(familyBudget.savings || 0, price, s.closingPercent);
+    note.textContent = price > 0
+      ? `With ${money(down)} down after closing costs, ${s.ratePercent}% for ${s.termYears} years, and Forsyth taxes and insurance`
+      : 'No room for a housing payment with these numbers';
   }
 
   function setText(id, text) { byId(id).textContent = text; }
@@ -158,7 +213,7 @@ const BUDGET_FIELDS = {
       return;
     }
     setText('r-guideline', money(PlannerMath.guidelineHousingAmount(familyBudget.grossMonthly, guide.value)) + ' / mo');
-    byId('r-guidelineNote').textContent = `${guide.value}% of pay before taxes. A guideline, not a rule (${guide.source})`;
+    byId('r-guidelineNote').textContent = `${guide.value}% of pay before taxes. A guideline, not a rule (${guide.cite || guide.source})`;
   }
 
   // The +/- buttons next to each money box.
