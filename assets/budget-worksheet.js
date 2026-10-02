@@ -33,8 +33,7 @@ function homeCostSettings(market) {
     ratePercent: familyBudget.ratePercent ?? v('loan.default_interest_rate'),
     termYears: familyBudget.termYears ?? v('loan.default_term_years'),
     assessmentRatio: v('property_tax.assessment_ratio'),
-    // the Alpharetta data has no tax district per home yet, so only Forsyth has a rate
-    mills: market === 'forsyth' ? v('property_tax.millage.forsyth_county') : null,
+    mills: v('property_tax.millage.forsyth_county'),
     exemption: v('property_tax.homestead_exemption') || 0,
     insurancePer1000: v('insurance.homeowners_rate_per_1000'),
     pmiPer100k: v('mortgage_insurance.monthly_per_100k'),

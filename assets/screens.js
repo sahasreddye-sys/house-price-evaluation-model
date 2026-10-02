@@ -11,11 +11,11 @@
 //   #/how                         how this works
 //   #/how/accuracy                a section inside "how this works"
 //
-// Links from the older site (#alpharetta/<id>, #forsyth) still open the home.
+// Links from the older site (#forsyth/<id>) still open the home.
 
 function parseScreenRoute(hash) {
   const h = decodeURIComponent(hash || '');
-  let m = h.match(/^#\/homes?(?:\/(alpharetta|forsyth)(?:\/(.+))?)?$/) || h.match(/^#(alpharetta|forsyth)(?:\/(.+))?$/);
+  let m = h.match(/^#\/homes?(?:\/(forsyth)(?:\/(.+))?)?$/) || h.match(/^#(forsyth)(?:\/(.+))?$/);
   if (m) return { screen: m[2] ? 'detail' : 'homes', market: m[1] || null, id: m[2] || null };
   if (h === '#/detail') return { screen: 'detail', market: null, id: null };
   m = h.match(/^#\/how(?:\/([\w-]+))?$/);
@@ -23,7 +23,7 @@ function parseScreenRoute(hash) {
   return { screen: 'budget' };
 }
 
-const APP_NAME = 'Room to Spare';
+const APP_NAME = 'Sawnee Ledger';
 const SCREEN_TITLES = { budget: 'Budget', homes: 'Homes', detail: 'Home detail', how: 'How this works' };
 
 function markScreenTabs(route) {

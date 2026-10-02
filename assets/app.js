@@ -45,22 +45,6 @@ if (typeof document !== 'undefined') (function () {
    Numbers from the v2 notebook run (housing_model_v2.ipynb)
    ============================================================ */
 const NB = {
-  alpharetta: {
-    place: 'Alpharetta', name: 'Alpharetta', county: 'Fulton County', hue: 245,
-    n: 19218, r2: 0.911, mae: 45659, mape: 6.34, medape: 3.93, w10: 81.3, cov: 0.798,
-    bandLo: -0.08996691503784379, bandHi: 0.10331139084715889,
-    tiers: [0.843, 0.851, 0.846, 0.769, 0.691],
-    steps: [
-      { name: 'v1 inputs', a: 7.25, b: 29.19 },
-      { name: '+ building details', a: 3.97, b: 16.34 },
-      { name: '+ coordinates (final)', a: 3.93, b: 15.63 },
-    ],
-    sales: [
-      { year: 2023, n: 10, cv: 0.970, cvCod: 19.4, est: 0.923, estCod: 19.9 },
-      { year: 2024, n: 160, cv: 0.859, cvCod: 15.7, est: 0.853, estCod: 14.3 },
-      { year: 2025, n: 308, cv: 0.786, cvCod: 21.4, est: 0.780, estCod: 22.0 },
-    ],
-  },
   forsyth: {
     place: 'Forsyth County', name: 'Forsyth', county: 'Forsyth County', hue: 48,
     n: 80306, r2: 0.912, mae: 45380, mape: 6.76, medape: 4.42, w10: 81.6, cov: 0.800,
@@ -83,28 +67,14 @@ const isNewHome = (d, i) => d.H.yr[i] >= NEW_HOME_FIRST_YEAR;
 const mayBePartlyBuilt = (d, i) => d.H.yr[i] >= TAX_YEAR;
 
 const LABELS = {
-  LandAcres: 'Lot size', LivUnits: 'Living units', LUCode: 'Home type', NbrHood: 'Neighborhood',
-  AreaSF_all: 'Square footage', YrBlt: 'Year built', Stories: 'Stories', TotBed: 'Bedrooms',
-  FixBath: 'Full baths', FixHalf: 'Half baths', TotRooms: 'Total rooms', Basement: 'Basement',
-  FinBsmtVal: 'Finished basement', ExtWall: 'Exterior walls', Attic: 'Attic', Firepl_S: 'Fireplaces',
-  Firepl_PF: 'Prefab fireplaces', n_cards: 'Buildings on the lot', Topo: 'Lot topography',
-  Fronting: 'Road frontage', lon: 'Location (east–west)', lat: 'Location (north–south)',
+  lon: 'Location (east–west)', lat: 'Location (north–south)',
   BLDGAREA: 'Building size', RESFLRAREA: 'Residential floor area', home_age: 'Age',
   FLOORCOUNT: 'Floors', STATEDAREA: 'Lot size', owns_lot: 'Owns its lot', USECD: 'Use type',
   NGHBRHDCD: 'Neighborhood', CLASSCD: 'Tax class', ZONING: 'Zoning', STRCLASS: 'Construction grade',
   RESSTRTYP: 'Structure type',
 };
-const LU = { '101': 'Single family', '106': 'Condo', '107': 'Townhome' };
 
 const SLIDERS = {
-  alpharetta: [
-    { f: 'AreaSF_all', label: 'Square footage', min: v => Math.max(400, r50(v * 0.5)), max: v => r50(v * 1.8), step: 50, fmt: v => fmtInt(v) + ' sq ft' },
-    { f: 'YrBlt', label: 'Year built', min: () => 1900, max: () => TAX_YEAR, step: 1, fmt: v => String(v) },
-    { f: 'TotBed', label: 'Bedrooms', min: () => 1, max: () => 8, step: 1, fmt: v => String(v) },
-    { f: 'FixBath', label: 'Full baths', min: () => 1, max: () => 7, step: 1, fmt: v => String(v) },
-    { f: 'FixHalf', label: 'Half baths', min: () => 0, max: () => 4, step: 1, fmt: v => String(v) },
-    { f: 'LandAcres', label: 'Lot size', min: () => 0.05, max: v => Math.max(2, +(v * 3).toFixed(2)), step: 0.01, fmt: v => v.toFixed(2) + ' ac' },
-  ],
   forsyth: [
     { f: 'BLDGAREA', label: 'Building size', min: v => Math.max(400, r50(v * 0.5)), max: v => r50(v * 1.8), step: 50, fmt: v => fmtInt(v) + ' sq ft' },
     // the model uses age; people think in year built
@@ -174,7 +144,7 @@ class Spring {
 
 /* ---------------- state ---------------- */
 const state = {
-  market: 'alpharetta', data: {}, summary: null, sel: -1, vec: null, base: 0, est: 0,
+  market: 'forsyth', data: {}, summary: null, sel: -1, vec: null, base: 0, est: 0,
   sort: 'value', filter: '', shown: 25, loading: null,
   listSort: 'newest', listShown: 20,
 };
@@ -568,7 +538,7 @@ function renderResult() {
   $('result').hidden = false;
   $('detailEmpty').hidden = true;
   $('rAddr').textContent = H.addr[i] || H.id[i];
-  const use = market === 'alpharetta' ? (LU[d.useOf(i)] || d.useOf(i)) : titleCase(d.useOf(i));
+  const use = titleCase(d.useOf(i));
   $('rParcel').textContent = 'Parcel ' + H.id[i].replace(/\s+/g, ' ');
   $('rMeta').textContent = [use, d.subOf(i), d.nbrOf(i) ? 'neighborhood ' + d.nbrOf(i) : ''].filter(Boolean).join(' · ');
   const link = $('rCounty');
@@ -580,7 +550,7 @@ function renderResult() {
   if (H.yr[i]) facts.push(['Built', H.yr[i]]);
   if (H.beds && H.beds[i] != null) facts.push(['Bedrooms', H.beds[i]]);
   if (H.baths && H.baths[i] != null) facts.push(['Baths', H.baths[i] + (H.half[i] ? ` + ${H.half[i]} half` : '')]);
-  if (H.floors[i] != null) facts.push([market === 'alpharetta' ? 'Stories' : 'Floors', H.floors[i]]);
+  if (H.floors[i] != null) facts.push(['Floors', H.floors[i]]);
   if (H.ac[i]) facts.push(['Lot', H.ac[i].toFixed(2) + ' ac']);
   if (d.schools) {
     const z = level => { const k = d.schools.home[level][i]; return k >= 0 ? titleCase(d.schools.levels[level][k]) : '—'; };
@@ -636,9 +606,6 @@ function updateEstimate(initial) {
   const rows = [
     [`County value ${TAX_YEAR}`, fmtUSD(cv), `model is ${Math.abs(diff) < 0.5 ? 'within 0.5%' : Math.abs(diff).toFixed(1) + '%' + (diff > 0 ? ' higher' : ' lower')}`],
   ];
-  if (state.market === 'alpharetta') {
-    rows.push(H.sp[i] ? ['Last recorded sale', fmtUSD(H.sp[i]), fmtDate(H.sd[i])] : ['Last recorded sale', 'none on file', '']);
-  }
   if (H.sqft[i]) rows.push(['Estimate per sq ft', fmtUSD(est / H.sqft[i]), `county ${fmtUSD(cv / H.sqft[i])}`]);
   $('rCompare').innerHTML = rows.map(([k, v, s]) => `<div><dt>${k}</dt><dd class="num">${v}${s ? `<small>${esc(s)}</small>` : ''}</dd></div>`).join('');
 }
@@ -648,16 +615,14 @@ function featValue(d, f, i) {
   if (v == null) return 'Not recorded';
   if (d.model.cats[f]) {
     const c = d.model.cats[f][v];
-    if (f === 'LUCode') return LU[c] || c;
     if (f === 'NbrHood' || f === 'NGHBRHDCD') return 'Code ' + c;
     return titleCase(c);
   }
   switch (f) {
     case 'lon': case 'lat': return 'Where the home sits';
-    case 'AreaSF_all': case 'BLDGAREA': case 'RESFLRAREA': return fmtInt(v) + ' sq ft';
-    case 'LandAcres': case 'STATEDAREA': return v.toFixed(2) + ' acres';
+    case 'BLDGAREA': case 'RESFLRAREA': return fmtInt(v) + ' sq ft';
+    case 'STATEDAREA': return v.toFixed(2) + ' acres';
     case 'home_age': return v + ' years (built ' + (TAX_YEAR - v) + ')';
-    case 'FinBsmtVal': return v ? fmtUSD(v) : 'None';
     case 'owns_lot': return v ? 'Yes' : 'No';
     default: return String(v);
   }
@@ -733,12 +698,9 @@ $('rNearby').addEventListener('click', e => { const b = e.target.closest('button
    ============================================================ */
 const aff = { downTyped: false, rateMoved: false };
 
-// The starting "price to check": the model's estimate. For Alpharetta it is
-// raised by the 2025 sales check, since homes there sold above model estimates.
+// The starting "price to check" is the model's estimate.
 function startingPrice(d, i) {
-  const ratio = plannerSetting('sale_price_adjustment.alpharetta_model_to_sale_ratio').value;
-  const est = d.H.est[i];
-  return d.market === 'alpharetta' && ratio ? est / ratio : est;
+  return d.H.est[i];
 }
 
 function resetAfford() {
@@ -751,8 +713,7 @@ function resetAfford() {
   $('affDrop').checked = false;
   const rate = homeCostSettings(d.market).ratePercent;
   $('affRate').value = rate ?? 7;
-  const place = d.market === 'forsyth' ? 'Forsyth County GA' : 'Alpharetta GA';
-  $('affSearch').href = 'https://www.google.com/search?q=' + encodeURIComponent(`${d.H.addr[i]}, ${place} for sale`);
+  $('affSearch').href = 'https://www.google.com/search?q=' + encodeURIComponent(`${d.H.addr[i]}, Forsyth County GA for sale`);
   renderAfford();
 }
 
@@ -779,9 +740,7 @@ function renderAfford() {
     : PlannerMath.downPaymentFromSavings(savings, price || 0, s.closingPercent) ?? 0;
   if (!aff.downTyped) $('affDown').placeholder = fmtInt(down);
 
-  $('affPriceNote').textContent = d.market === 'alpharetta'
-    ? 'Starts at the estimate raised for 2025 sales. Type an asking price to check it.'
-    : 'Starts at the model’s estimate. Type an asking price to check it.';
+  $('affPriceNote').textContent = 'Starts at the model’s estimate. Type an asking price to check it.';
   $('affDownNote').textContent = typedDown != null ? 'Your number' : `From your savings after ${s.closingPercent}% closing costs`;
   $('affInsNote').textContent = quote != null ? 'Your quote, per year' : `Blank uses $${(+s.insurancePer1000).toFixed(2)} per $1,000 of value a year (${plannerSetting('insurance.homeowners_rate_per_1000').cite})`;
 
@@ -799,7 +758,7 @@ function renderAfford() {
   const millage = plannerSetting('property_tax.millage.forsyth_county');
   const notes = {
     loanPayment: `${fmtUSD(cost.loan)} loan at ${$('affRateOut').textContent} for ${s.termYears} years` + (downUsed > down ? ` (with the ${s.minDownPercent}% minimum down)` : ''),
-    propertyTax: s.mills != null ? `40% of the price × ${s.mills} mills (${millage.cite})` : 'Not set yet: Alpharetta tax rates still need an official source',
+    propertyTax: s.mills != null ? `40% of the price × ${s.mills} mills (${millage.cite})` : 'Not set yet: the tax rate needs an official source',
     homeInsurance: quote != null ? 'Your quote' : `Estimate: ${plannerSetting('insurance.homeowners_rate_per_1000').cite}`,
     mortgageInsurance: downPct >= s.pmiRequiredBelowPercent ? `None: ${s.pmiRequiredBelowPercent}% or more down`
       : `Under ${s.pmiRequiredBelowPercent}% down (${downPct.toFixed(1)}%): $${s.pmiPer100k} a month per $100,000 borrowed`,
@@ -817,18 +776,11 @@ function renderAfford() {
 function renderPriceCheck(d, i, price) {
   const H = d.H, lo = H.est[i] * d.lowMul, hi = H.est[i] * d.highMul;
   const parts = [`The model puts this home at <b>${fmtShort(lo)}–${fmtShort(hi)}</b>, based on county values, which usually run below sale prices.`];
-  const ratio = plannerSetting('sale_price_adjustment.alpharetta_model_to_sale_ratio').value;
-  if (d.market === 'alpharetta' && ratio) {
-    parts.push(`2025 Alpharetta sales closed above model estimates, so a rough sale-price range is <b>${fmtShort(lo / ratio)}–${fmtShort(hi / ratio)}</b>. Sale prices spread widely around that, so treat it loosely.`);
-  } else {
-    parts.push('No Forsyth sales were available to test how far below sale prices it runs.');
-  }
+  parts.push('No Forsyth sales were available to test how far below sale prices it runs.');
   const top = H.drv[i][0];
   if (top) parts.push(`The biggest reason for the model’s number: ${esc(LABELS[d.model.features[top[0]]] || '')} (${fmtPct(top[1], 0)} vs. the average home).`);
-  const checkHi = d.market === 'alpharetta' && ratio ? hi / ratio : hi;
-  const checkLo = d.market === 'alpharetta' && ratio ? lo / ratio : lo;
-  if (price > checkHi) parts.push(`Your price is <b>${Math.round((price / checkHi - 1) * 100)}% above</b> the top of that range.`);
-  else if (price < checkLo) parts.push(`Your price is <b>${Math.round((1 - price / checkLo) * 100)}% below</b> the bottom of that range.`);
+  if (price > hi) parts.push(`Your price is <b>${Math.round((price / hi - 1) * 100)}% above</b> the top of that range.`);
+  else if (price < lo) parts.push(`Your price is <b>${Math.round((1 - price / lo) * 100)}% below</b> the bottom of that range.`);
   else parts.push('Your price is <b>inside</b> that range.');
   $('affPriceCheck').innerHTML = parts.join(' ');
 }
@@ -918,7 +870,6 @@ function renderCostSources() {
     ['Lowest down payment allowed', 'loan.minimum_down_payment_percent', v => v + '% of price'],
     ['Share of value that is taxed', 'property_tax.assessment_ratio', v => (v * 100) + '%'],
     ['Forsyth tax rate', 'property_tax.millage.forsyth_county', v => v + ' mills'],
-    ['Alpharetta tax rate', 'property_tax.millage.fulton_district_10', v => v + ' mills'],
     ['Homestead exemption', 'property_tax.homestead_exemption', v => fmtUSD(v)],
     ['Home insurance', 'insurance.homeowners_rate_per_1000', v => `$${(+v).toFixed(2)} per $1,000 a year`],
     ['Mortgage insurance', 'mortgage_insurance.monthly_per_100k', v => `$${v}/mo per $100,000`],
@@ -998,7 +949,7 @@ function stepChart() {
 }
 
 function scoreboard() {
-  const a = NB.alpharetta, f = NB.forsyth;
+  const f = NB.forsyth;
   const rows = [
     ['Median error', 'half the estimates land closer than this', v => v.medape.toFixed(1) + '%'],
     ['Within 10% of county value', '', v => v.w10.toFixed(1) + '%'],
@@ -1008,8 +959,8 @@ function scoreboard() {
     ['Homes scored', '', v => fmtInt(v.n)],
   ];
   $('scoreboard').innerHTML =
-    `<thead><tr><th></th><th><span class="sw" style="background:var(--alph)"></span>Alpharetta</th><th><span class="sw" style="background:var(--fors)"></span>Forsyth County</th></tr></thead><tbody>` +
-    rows.map(([k, s, fn]) => `<tr><td>${k}${s ? `<small>${s}</small>` : ''}</td><td>${fn(a)}</td><td>${fn(f)}</td></tr>`).join('') + '</tbody>';
+    `<thead><tr><th></th><th>Forsyth County</th></tr></thead><tbody>` +
+    rows.map(([k, s, fn]) => `<tr><td>${k}${s ? `<small>${s}</small>` : ''}</td><td>${fn(f)}</td></tr>`).join('') + '</tbody>';
 }
 
 function caveats() {
@@ -1018,21 +969,10 @@ function caveats() {
   const items = [
     `<b>The priciest homes.</b> For the top fifth of ${nb.name} homes by value, the range catches the county value ${top}% of the time, not 80%. Read estimates on expensive homes as looser than the range says.`,
   ];
-  if (state.market === 'alpharetta') {
-    const lag = Math.round((1 / nb.sales[2].cv - 1) * 100);
-    items.push('<b>Neighborhoods it hasn’t seen.</b> With whole neighborhoods held out, median error goes from 3.9% to 15.6%. The model leans hard on having priced the neighbors.');
-    items.push(`<b>The market has moved.</b> 2025 sales closed about ${lag}% above county value. The model predicts county value, so it trails the market by about as much.`);
-  } else {
-    items.push(`<b>A few big misses.</b> Mean error is ${nb.mape.toFixed(1)}% against a ${nb.medape.toFixed(1)}% median: most homes are close, and a small group of unusual ones miss badly.`);
-    items.push('<b>No sales check.</b> The Forsyth export has no sale records, so these estimates are compared only with county values. The Alpharetta sales below show county values trailing 2025 prices.');
-  }
+  items.push(`<b>A few big misses.</b> Mean error is ${nb.mape.toFixed(1)}% against a ${nb.medape.toFixed(1)}% median: most homes are close, and a small group of unusual ones miss badly.`);
+  // the only check against real sale prices came from an earlier version that also covered Alpharetta (housing_model_v2.ipynb)
+  items.push('<b>No sales check here yet.</b> The Forsyth data has no sale records, so these estimates are compared only with county values. An earlier version of this project also covered Alpharetta, where 2025 sales closed about 27% above county values, so expect estimates based on county values to come in under what homes actually sell for.');
   $('caveats').innerHTML = items.map(t => `<li>${t}</li>`).join('');
-}
-
-function salesTable() {
-  const s = NB.alpharetta.sales;
-  $('salesTable').innerHTML = `<thead><tr><th>Sale year</th><th>Sales</th><th>County ratio</th><th>County COD</th><th>Model ratio</th><th>Model COD</th></tr></thead><tbody>` +
-    s.map(r => `<tr><td>${r.year}</td><td>${r.n}</td><td>${r.cv.toFixed(3)}</td><td>${r.cvCod.toFixed(1)}%</td><td>${r.est.toFixed(3)}</td><td>${r.estCod.toFixed(1)}%</td></tr>`).join('') + '</tbody>';
 }
 
 /* ============================================================
@@ -1080,7 +1020,6 @@ function initSeg(seg, onPick) {
     onPick(b);
   });
 }
-initSeg($('marketSeg'), b => setMarket(b.dataset.market));
 initSeg($('sortSeg'), b => { state.sort = b.dataset.sort; state.shown = 25; renderTable(); });
 
 /* ============================================================
@@ -1116,7 +1055,7 @@ function setupFilters(d) {
   }
   if (d.schools) $('fNote').textContent = `School zones come from Forsyth County GIS (updated ${d.schools.as_of.split(' ')[0]}). Zones can change, so check with the school district before deciding.`;
   else if (d.market === 'forsyth') $('fNote').textContent = 'School zones couldn’t be loaded.';
-  else $('fNote').textContent = 'School zones are only set up for Forsyth County so far. Bedrooms and baths are only in the Alpharetta data.';
+
 }
 
 function readFilters() {
@@ -1173,7 +1112,7 @@ function applyFilters() {
   // the budget setting only works once the budget and every cost source are there
   let fitsProblem = '';
   if (f.fits && !budgetIsFilledIn()) fitsProblem = 'Fill in your budget first. This setting is off until then.';
-  else if (f.fits && homeFitLabel(d, 0).label == null) fitsProblem = d.market === 'forsyth' ? 'A cost source is missing, so this setting is off.' : 'Alpharetta tax rates aren’t set yet, so this only works for Forsyth homes.';
+  else if (f.fits && homeFitLabel(d, 0).label == null) fitsProblem = 'A cost source is missing, so this setting is off.';
   $('fFitsNote').textContent = fitsProblem || 'Uses your budget and each home’s estimate as the price';
   $('fFitsNote').classList.toggle('partial', !!fitsProblem);
   const useFits = f.fits && !fitsProblem;
@@ -1283,7 +1222,6 @@ function setStatus(msg, error) { const s = $('status'); s.textContent = msg; s.c
 async function setMarket(market, selectId) {
   state.market = market;
   document.body.dataset.market = market;
-  $('marketSeg').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.market === market)));
   const nb = NB[market];
   $('result').hidden = true; $('detailEmpty').hidden = false; state.sel = -1;
   $('tabDetail').href = '#/detail';
@@ -1328,10 +1266,10 @@ $('themeBtn').addEventListener('click', () => {
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { themeLabel(); buildRamp(); drawMap(); });
 
 (async function boot() {
-  scoreboard(); salesTable();
+  scoreboard();
   fetchJSON('data/summary.json').then(s => { state.summary = s; errChart(); }).catch(() => {});
   const route = parseScreenRoute(location.hash);
-  await setMarket(route.market || 'alpharetta', route.id);
+  await setMarket('forsyth', route.id);
   window.addEventListener('hashchange', () => {
     const r = parseScreenRoute(location.hash);
     if (!r.market) return;
