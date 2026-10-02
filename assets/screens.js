@@ -23,7 +23,7 @@ function parseScreenRoute(hash) {
   return { screen: 'budget' };
 }
 
-const APP_NAME = 'Sawnee Ledger';
+const APP_NAME = 'Forsyth MarketMap';
 const SCREEN_TITLES = { budget: 'Budget', homes: 'Homes', detail: 'Home detail', how: 'How this works' };
 
 function markScreenTabs(route) {
