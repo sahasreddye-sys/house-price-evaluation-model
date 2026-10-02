@@ -16,6 +16,14 @@
       "as_of": "2026-10-01",
       "note": "Families can change it.",
       "cite": "the loan Freddie Mac surveys"
+    },
+    "minimum_down_payment_percent": {
+      "value": 3,
+      "unit": "percent of price",
+      "source": "My Home by Freddie Mac, 'Unlock Homeownership with Just 3% Down': Home Possible 'provides down payment options as low as 3%': https://myhome.freddiemac.com/buying/3-percent-down-payment",
+      "as_of": "2026-10-02",
+      "note": "The lowest down payment the planner allows. Many loans need more; some programs (FHA, VA) differ.",
+      "cite": "Freddie Mac Home Possible"
     }
   },
   "property_tax": {
