@@ -147,6 +147,14 @@ const PlannerMath = {
     return Math.floor(lo / 100) * 100;
   },
 
+  // Buying takes cash up front: closing costs plus at least the minimum down
+  // payment. The most savings can cover is savings / (closing% + minimum down%).
+  maxPriceForCash(savings, closingPercent, minDownPercent) {
+    if (closingPercent == null || minDownPercent == null) return null;
+    if (!savings || savings <= 0) return 0;
+    return Math.floor(savings / ((closingPercent + minDownPercent) / 100) / 100) * 100;
+  },
+
   monthsToSave(shortfall, savedPerMonth) {
     if (shortfall == null || shortfall <= 0) return 0;
     if (!savedPerMonth) return null;

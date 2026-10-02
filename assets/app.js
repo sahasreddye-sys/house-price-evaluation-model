@@ -791,12 +791,14 @@ function renderAfford() {
   }
   renderPriceCheck(d, i, price);
 
-  const cost = PlannerMath.monthlyHousingCost({ ...s, ratePercent: rate, price, downPayment: down,
+  // a down payment below the minimum isn't allowed, so the loan is figured with the minimum
+  const downUsed = s.minDownPercent != null ? Math.max(down, price * s.minDownPercent / 100) : down;
+  const cost = PlannerMath.monthlyHousingCost({ ...s, ratePercent: rate, price, downPayment: downUsed,
     insuranceMonthly: quote != null ? quote / 12 : null });
-  const downPct = price ? down / price * 100 : 0;
+  const downPct = price ? downUsed / price * 100 : 0;
   const millage = plannerSetting('property_tax.millage.forsyth_county');
   const notes = {
-    loanPayment: `${fmtUSD(cost.loan)} loan at ${$('affRateOut').textContent} for ${s.termYears} years`,
+    loanPayment: `${fmtUSD(cost.loan)} loan at ${$('affRateOut').textContent} for ${s.termYears} years` + (downUsed > down ? ` (with the ${s.minDownPercent}% minimum down)` : ''),
     propertyTax: s.mills != null ? `40% of the price × ${s.mills} mills (${millage.cite})` : 'Not set yet: Alpharetta tax rates still need an official source',
     homeInsurance: quote != null ? 'Your quote' : `Estimate: ${plannerSetting('insurance.homeowners_rate_per_1000').cite}`,
     mortgageInsurance: downPct >= s.pmiRequiredBelowPercent ? `None: ${s.pmiRequiredBelowPercent}% or more down`
@@ -833,13 +835,19 @@ function renderPriceCheck(d, i, price) {
 
 function renderCash(price, down, s) {
   const closing = PlannerMath.closingCosts(price, s.closingPercent) || 0;
-  const needed = down + closing;
+  // a down payment under the minimum can't be used, so the cash needed counts the minimum
+  const minDownAmount = s.minDownPercent != null ? price * s.minDownPercent / 100 : 0;
+  const needed = Math.max(down, minDownAmount) + closing;
   const savings = familyBudget.savings;
   const rows = [
     ['Down payment', fmtUSD(down), price ? (down / price * 100).toFixed(1) + '% of the price' : ''],
     ['Closing costs', fmtUSD(closing), `${s.closingPercent}% (${plannerSetting('closing_costs.percent_of_price').cite})`],
     ['Total needed', fmtUSD(needed), ''],
   ];
+  const minDown = s.minDownPercent;
+  if (minDown != null && price && down / price * 100 < minDown) {
+    rows.splice(2, 0, ['Minimum down payment', fmtUSD(minDownAmount), `${minDown}% (${plannerSetting('loan.minimum_down_payment_percent').cite}); the down payment above is below it, so this is counted instead`]);
+  }
   if (savings != null) {
     const gap = savings - needed;
     if (gap >= 0) rows.push(['Left in savings', fmtUSD(gap), gap === 0 ? 'all of it goes into the purchase; type a smaller down payment to keep some' : '']);
@@ -850,6 +858,8 @@ function renderCash(price, down, s) {
   }
   $('affCash').innerHTML = rows.map(([k, v, n]) => `<div><dt>${k}</dt><dd>${v}${n ? `<small>${esc(n)}</small>` : ''}</dd></div>`).join('');
 }
+
+const leftWords = left => left >= 0 ? `${fmtUSD(left)} left` : `${fmtUSD(-left)} short each month`;
 
 function renderVerdict(cost) {
   const ready = budgetIsFilledIn();
@@ -874,12 +884,15 @@ function renderVerdict(cost) {
   const takeHome = b.takeHome * (dropped ? 1 - dropPct / 100 : 1);
   const v = verdictFor(takeHome);
   const label = v.label ? `<b class="${v.label}">${v.label}</b>: ` : '';
-  $('affVerdict').innerHTML = `${label}about <b>${fmtUSD(v.left)}</b> (${v.pct.toFixed(0)}% of take-home pay) left each month after every bill, including this home${dropped ? `, with take-home pay ${dropPct}% lower` : ''}.`
+  const lower = dropped ? `, with take-home pay ${dropPct}% lower` : '';
+  $('affVerdict').innerHTML = (v.left >= 0
+    ? `${label}about <b>${fmtUSD(v.left)}</b> (${v.pct.toFixed(0)}% of take-home pay) left each month after every bill, including this home${lower}.`
+    : `${label}every bill plus this home would come to <b>${fmtUSD(-v.left)} more</b> than take-home pay each month${lower}.`)
     + (v.label ? ` Comfortable means ${cut1}% or more left; stretching means under ${cut2}%.` : '');
   const other = verdictFor(dropped ? b.takeHome : b.takeHome * (1 - dropPct / 100));
   $('affWhatIfNote').textContent = dropped
-    ? `At your full take-home pay: ${other.label ? other.label + ', ' : ''}${fmtUSD(other.left)} left.`
-    : `If take-home pay dropped ${dropPct}%: ${other.label ? other.label + ', ' : ''}${fmtUSD(other.left)} left.`;
+    ? `At your full take-home pay: ${other.label ? other.label + ', ' : ''}${leftWords(other.left)}.`
+    : `If take-home pay dropped ${dropPct}%: ${other.label ? other.label + ', ' : ''}${leftWords(other.left)}.`;
   const costs = Math.min((b.debts || 0) + (b.otherCosts || 0), takeHome);
   const home = Math.min(cost.total, Math.max(0, takeHome - costs));
   const left = Math.max(0, takeHome - costs - home);
@@ -902,6 +915,7 @@ function renderCostSources() {
   const rows = [
     ['Interest rate (starting value)', 'loan.default_interest_rate', v => v + '%'],
     ['Loan length (starting value)', 'loan.default_term_years', v => v + ' years'],
+    ['Lowest down payment allowed', 'loan.minimum_down_payment_percent', v => v + '% of price'],
     ['Share of value that is taxed', 'property_tax.assessment_ratio', v => (v * 100) + '%'],
     ['Forsyth tax rate', 'property_tax.millage.forsyth_county', v => v + ' mills'],
     ['Alpharetta tax rate', 'property_tax.millage.fulton_district_10', v => v + ' mills'],
@@ -1144,11 +1158,13 @@ function homeMatches(d, i, f) {
 
 // Comfort label for one home at its starting price, or null if it can't be worked out.
 function homeFitLabel(d, i) {
-  const cost = familyHomeCost(d.market, startingPrice(d, i)).total;
+  const price = startingPrice(d, i);
+  const cost = familyHomeCost(d.market, price).total;
   const b = familyBudget;
   const pct = PlannerMath.leftAfterHousingPercent(b.takeHome, b.debts, b.otherCosts, cost);
-  return { cost, label: PlannerMath.comfortLabel(pct, plannerSetting('comfort.comfortable_min_left_percent').value,
-    plannerSetting('comfort.stretching_below_left_percent').value) };
+  return { cost, cashOk: savingsCoverPrice(d.market, price) !== false,
+    label: PlannerMath.comfortLabel(pct, plannerSetting('comfort.comfortable_min_left_percent').value,
+      plannerSetting('comfort.stretching_below_left_percent').value) };
 }
 
 function applyFilters() {
@@ -1167,8 +1183,8 @@ function applyFilters() {
   for (let i = 0; i < d.n; i++) {
     if (!homeMatches(d, i, f)) continue;
     if (useFits) {
-      const label = homeFitLabel(d, i).label;
-      if (!(label === 'Comfortable' || (f.includeTight && label === 'Tight'))) { aboveBudget++; continue; }
+      const fit = homeFitLabel(d, i);
+      if (!fit.cashOk || !(fit.label === 'Comfortable' || (f.includeTight && fit.label === 'Tight'))) { aboveBudget++; continue; }
     }
     mask[i] = 1; list.push(i);
   }
@@ -1215,7 +1231,7 @@ function renderHomeList() {
   const on = d.activeSettings || [];
   $('activeSettings').hidden = !on.length;
   $('activeSettings').innerHTML = (on.length ? `Settings on: <b>${on.map(esc).join(' · ')}</b>` : '')
-    + (d.aboveBudget ? ` ${on.length ? '<br>' : ''}${fmtInt(d.aboveBudget)} more homes match your other settings but are above your budget.` : '');
+    + (d.aboveBudget ? ` ${on.length ? '<br>' : ''}${fmtInt(d.aboveBudget)} more homes match your other settings but are above your budget or your savings.` : '');
   $('activeSettings').hidden = !on.length && !d.aboveBudget;
   const H = d.H;
   const cmp = {
@@ -1236,7 +1252,7 @@ function renderHomeList() {
       : `<small class="r">county ${fmtShort(H.cv[i])}</small>`;
     if (budgetIsFilledIn()) {
       const fit = homeFitLabel(d, i);
-      if (fit.cost != null) note = `<small class="r">≈ ${fmtUSD(fit.cost)}/mo${fit.label ? ` · <span class="fit ${fit.label}">${fit.label}</span>` : ''}</small>`;
+      if (fit.cost != null) note = `<small class="r">≈ ${fmtUSD(fit.cost)}/mo${fit.label ? ` · <span class="fit ${fit.label}">${fit.label}</span>` : ''}${fit.cashOk ? '' : ' · <span class="fit Stretching">needs more savings</span>'}${mayBePartlyBuilt(d, i) ? ' · <span class="partial">may be partly built</span>' : ''}</small>`;
     }
     return `<li><button type="button" data-i="${i}"><span class="a">${esc(H.addr[i] || H.id[i])}</span><span class="v">${fmtShort(lo)}–${fmtShort(hi)}</span><small>${esc(bits)}</small>${note}</button></li>`;
   }).join('') || (d.hiddenByOthers

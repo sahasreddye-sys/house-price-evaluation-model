@@ -40,7 +40,15 @@ function homeCostSettings(market) {
     pmiPer100k: v('mortgage_insurance.monthly_per_100k'),
     pmiRequiredBelowPercent: v('mortgage_insurance.required_below_down_payment_percent'),
     closingPercent: v('closing_costs.percent_of_price'),
+    minDownPercent: v('loan.minimum_down_payment_percent'),
   };
+}
+
+// True when the family's savings cover closing costs plus the minimum down payment.
+function savingsCoverPrice(market, price) {
+  const s = homeCostSettings(market);
+  const cap = PlannerMath.maxPriceForCash(familyBudget.savings, s.closingPercent, s.minDownPercent);
+  return cap == null ? null : price <= cap;
 }
 
 // Monthly cost of one home for this family, with the down payment taken from
@@ -160,21 +168,30 @@ const BUDGET_FIELDS = {
     announceBudgetChange();
   }
 
-  // The most a Forsyth home could cost and still keep the comfortable amount
-  // free each month, with the down payment coming out of savings.
+  // The most a Forsyth home could cost. Two limits apply and the lower one wins:
+  //   1. the monthly cost has to stay within the comfortable housing amount
+  //   2. savings have to cover closing costs plus the minimum down payment
   function renderMaxPrice(limit) {
     const s = homeCostSettings('forsyth');
     const note = byId('r-maxPriceNote');
-    if (limit == null) { setText('r-maxPrice', '—'); note.textContent = 'Needs take-home pay and a comfort cutoff'; return; }
-    if (s.ratePercent == null || s.termYears == null) { setText('r-maxPrice', '—'); note.textContent = 'Needs an interest rate and loan length'; return; }
-    const costAt = price => familyHomeCost('forsyth', price).total;
-    const price = PlannerMath.maxPriceForMonthly(limit, costAt);
-    if (price == null) { setText('r-maxPrice', '—'); note.textContent = 'A cost source is still missing in planner-config.json'; return; }
-    setText('r-maxPrice', price > 0 ? 'about ' + money(price) : '$0');
-    const down = PlannerMath.downPaymentFromSavings(familyBudget.savings || 0, price, s.closingPercent);
-    note.textContent = price > 0
-      ? `With ${money(down)} down after closing costs, ${s.ratePercent}% for ${s.termYears} years, and Forsyth taxes and insurance`
-      : 'No room for a housing payment with these numbers';
+    const show = (price, text) => { setText('r-maxPrice', price); note.textContent = text; };
+    if (limit == null) return show('—', 'Needs take-home pay and a comfort cutoff');
+    if (s.ratePercent == null || s.termYears == null) return show('—', 'Needs an interest rate and loan length');
+    const byMonthly = PlannerMath.maxPriceForMonthly(limit, price => familyHomeCost('forsyth', price).total);
+    const byCash = PlannerMath.maxPriceForCash(familyBudget.savings, s.closingPercent, s.minDownPercent);
+    if (byMonthly == null || byCash == null) return show('—', 'A cost source is still missing in planner-config.json');
+    const blanks = familyBudget.debts == null && familyBudget.otherCosts == null
+      ? ' Debts and other costs are blank, so they count as $0.' : '';
+    if (byCash === 0) {
+      return show('$0', `Buying needs cash up front: closing costs (about ${s.closingPercent}%) plus at least ${s.minDownPercent}% down. Add your savings above.` + blanks);
+    }
+    if (byMonthly === 0) return show('$0', 'No room for a housing payment with these numbers.' + blanks);
+    const price = Math.min(byMonthly, byCash);
+    const down = PlannerMath.downPaymentFromSavings(familyBudget.savings, price, s.closingPercent);
+    const terms = `${money(down)} down (${(down / price * 100).toFixed(1)}%) after closing costs, ${s.ratePercent}% for ${s.termYears} years`;
+    show('about ' + money(price), byCash < byMonthly
+      ? `Held back by savings: closing costs plus at least ${s.minDownPercent}% down. The monthly budget alone would allow about ${money(byMonthly)}. ${terms}.` + blanks
+      : `Held back by the monthly budget. ${terms}, Forsyth taxes and insurance.` + blanks);
   }
 
   function setText(id, text) { byId(id).textContent = text; }
