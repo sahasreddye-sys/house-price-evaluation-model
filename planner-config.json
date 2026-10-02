@@ -36,41 +36,6 @@
       "cite": "Georgia Department of Revenue"
     },
     "millage": {
-      "fulton_district_10": {
-        "value": null,
-        "unit": "mills (dollars per $1,000 of assessed value)",
-        "source": "TODO",
-        "as_of": "TODO",
-        "note": "Covers 19,079 of the Alpharetta homes. Sources found so far disagree, so it's left unset: Fulton County general fund is 8.87 mills for 2025 (fultoncountyga.gov), but the school and city parts still need official pages."
-      },
-      "fulton_district_10A": {
-        "value": null,
-        "unit": "mills",
-        "source": "TODO",
-        "as_of": "TODO",
-        "note": "2 homes."
-      },
-      "fulton_district_45": {
-        "value": null,
-        "unit": "mills",
-        "source": "TODO",
-        "as_of": "TODO",
-        "note": "187 homes."
-      },
-      "fulton_district_56": {
-        "value": null,
-        "unit": "mills",
-        "source": "TODO",
-        "as_of": "TODO",
-        "note": "112 homes."
-      },
-      "fulton_district_57": {
-        "value": null,
-        "unit": "mills",
-        "source": "TODO",
-        "as_of": "TODO",
-        "note": "180 homes."
-      },
       "forsyth_county": {
         "value": 24.522,
         "unit": "mills",
@@ -160,16 +125,6 @@
       "as_of": "2026-10-01",
       "note": "Design choice, not a statistic.",
       "cite": "DESIGN.md"
-    }
-  },
-  "sale_price_adjustment": {
-    "alpharetta_model_to_sale_ratio": {
-      "value": 0.78,
-      "unit": "model estimate divided by sale price (median)",
-      "source": "housing_model_v2.ipynb, sales check cell: 308 Alpharetta sales in 2025 (warranty deed, land and building, $100k+)",
-      "as_of": "2026-09-29",
-      "note": "Spread around this ratio was 22% (COD), so the adjusted range is rough. Not applied to Forsyth: no sales were tested there.",
-      "cite": "2025 Alpharetta sales check"
     }
   }
 }

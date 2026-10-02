@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Room to Spare</title>
-<meta name="description" content="Room to Spare: a home-buying worksheet for families in Alpharetta and Forsyth County, Georgia. Start from your monthly budget and see what a home would cost each month.">
+<title>Sawnee Ledger</title>
+<meta name="description" content="Sawnee Ledger: a home-buying worksheet for Forsyth County, Georgia families. Start from your monthly budget and see what a home would really cost each month.">
 <meta name="color-scheme" content="light dark">
-<link rel="icon" href="assets/logo.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='%23235347' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 21 L9 11 L12.5 14.5 L18 6 L30 21'/%3E%3Cpath d='M11.5 23 V18.5 L16 15 L20.5 18.5 V23'/%3E%3Cpath d='M3 26.5 H29 M3 30 H21'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -94,8 +94,7 @@ button { font: inherit; color: inherit; }
 .mast { position: sticky; top: 0; z-index: var(--z-sticky); background: var(--bar-glass); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px); box-shadow: 0 1px 8px rgba(0,0,0,.04); }
 .mast-in { max-width: 840px; margin: 0 auto; height: 72px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .app-id { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; }
-.app-mark { width: 34px; height: 34px; display: grid; place-items: center; color: var(--primary); border: 1.5px solid var(--primary); border-radius: 4px; flex-shrink: 0; }
-.app-mark .ms { font-size: 22px; }
+.app-mark { width: 34px; height: 34px; display: block; color: var(--primary); flex-shrink: 0; }
 .app-name { font-size: 16px; font-weight: 600; line-height: 22px; letter-spacing: -.005em; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .app-sub { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 11px; line-height: 14px; }
 .app-sub .caps { font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--outline); white-space: nowrap; }
@@ -532,14 +531,18 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
 }
 </style>
 </head>
-<body data-market="alpharetta">
+<body data-market="forsyth">
 
 <header class="mast">
   <div class="mast-in">
     <a class="app-id" href="#/budget">
-      <span class="app-mark" aria-hidden="true"><span class="ms">home</span></span>
+      <svg class="app-mark" viewBox="0 0 32 32" width="34" height="34" aria-hidden="true" focusable="false">
+        <path d="M2 21 L9 11 L12.5 14.5 L18 6 L30 21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M11.5 23 V18.5 L16 15 L20.5 18.5 V23" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M3 26.5 H29 M3 30 H21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
       <span style="min-width:0">
-        <span class="app-name" style="display:block">Room to Spare</span>
+        <span class="app-name" style="display:block">Sawnee Ledger</span>
         <span class="app-sub"><span id="screenName">Budget</span></span>
       </span>
     </a>
@@ -668,10 +671,8 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
   <div data-screen="homes" hidden>
   <section class="wrap lookup">
     <div>
-      <p class="intro">Estimated values for 99,524 homes in north Fulton and Forsyth County, Georgia, from 2025 county assessor records and a LightGBM model.</p>
-      <h1>Look up a home in
-        <span class="place" id="marketSeg" role="group" aria-label="Market"><button type="button" data-market="alpharetta" aria-pressed="true">Alpharetta</button><span class="or">or</span><button type="button" data-market="forsyth" aria-pressed="false">Forsyth County</button></span>
-      </h1>
+      <p class="intro">Estimated values for 80,306 homes in Forsyth County, Georgia, from 2025 county tax records and a LightGBM model.</p>
+      <h1>Look up a home in Forsyth County</h1>
       <div class="search" role="search">
         <label class="sr" for="q">Street address</label>
         <input id="q" type="text" autocomplete="off" spellcheck="false" placeholder="Street address"
@@ -880,10 +881,6 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
           <p class="lead"><b>Where to be careful</b></p>
           <ol class="notes" id="caveats"></ol>
         </div>
-        <div>
-          <p class="lead"><b>Against real sales.</b> County values are not sale prices. Against recent Alpharetta sales (warranty deed, land and building, $100k+), both the county and the model come in under the price paid. Ratio is value ÷ sale price; COD is the average spread around that ratio.</p>
-          <table id="salesTable"></table>
-        </div>
       </div>
     </div>
   </section>
@@ -892,16 +889,15 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
     <div class="wrap">
       <div class="side">
         <h2>Changes in v2</h2>
-        <p>v1 priced Alpharetta from four inputs and covered a 1,653-home sample of Cumming. v2 reads the buildings, covers all of Forsyth County, and tests its range.</p>
+        <p>v1 covered a 1,653-home sample of Cumming and leaned on the county’s own land value. v2 covers all of Forsyth County, drops that land value, and tests its range.</p>
       </div>
       <div class="main">
         <dl class="log">
-          <div><dt>Building details for Alpharetta</dt><dd>Square footage across every structure on the lot, year built, beds, baths, stories, basement, exterior, fireplaces, topography and road frontage.</dd></div>
           <div><dt>All of Forsyth County</dt><dd>80,306 homes instead of a 1,653-home sample from Cumming.</dd></div>
           <div><dt>No county land value</dt><dd>v1 leaned on the assessor’s land value, which nobody outside the assessor’s office would have. v2 drops it and still lands within 0.1 points of v1’s median error.</dd></div>
+          <div><dt>Construction grade and structure type</dt><dd>Two more county fields that describe how a home is built.</dd></div>
           <div><dt>Coordinates</dt><dd>Latitude and longitude, so the model can separate streets that share a neighborhood code.</dd></div>
-          <div><dt>A tested range</dt><dd>The 80% range is set from the model’s own errors, then checked on a held-out half of homes: 79.8% coverage in Alpharetta, 80.0% in Forsyth.</dd></div>
-          <div><dt>A harder test</dt><dd>Holding out whole neighborhoods, to see how the model does somewhere it has never been.</dd></div>
+          <div><dt>A tested range</dt><dd>The 80% range is set from the model’s own errors, then checked on a held-out half of homes: 80.0% coverage.</dd></div>
         </dl>
         <div>
           <p class="lead" id="stepSub"></p>
@@ -945,7 +941,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
   <div class="wrap">
     <img class="foot-logo" src="assets/logo.png" alt="Sahas Reddy Etikyala" width="96" height="40">
     <div>
-      <p>Data: Fulton County and Forsyth County tax assessor parcel records, tax year 2025. Two LightGBM models, 600 trees each, trained on log county value with 5-fold cross-validation. Estimates follow assessed value, not market price, and are not an appraisal.</p>
+      <p>Data: Forsyth County tax assessor parcel records, tax year 2025. A LightGBM model, 600 trees, trained on log county value with 5-fold cross-validation. Estimates follow assessed value, not market price, and are not an appraisal.</p>
       <p><a href="https://github.com/sahasreddye-sys/house-price-evaluation-model" rel="noopener">Code and notebook on GitHub</a></p>
       <p class="aside">This frontend was vibe coded. The model behind it, from the data cleaning to the validation, is my own original work.</p>
     </div>
@@ -964,10 +960,10 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
 
 <!-- Change this version (and the ones below) on every update so browsers load the new
      files instead of a saved old copy; GitHub Pages lets browsers keep files for 10 minutes. -->
-<script>const ASSET_VERSION = '2026-10-02b';</script>
-<script src="assets/planner-math.js?v=2026-10-02b"></script>
-<script src="assets/budget-worksheet.js?v=2026-10-02b"></script>
-<script src="assets/screens.js?v=2026-10-02b"></script>
-<script src="assets/app.js?v=2026-10-02b"></script>
+<script>const ASSET_VERSION = '2026-10-02c';</script>
+<script src="assets/planner-math.js?v=2026-10-02c"></script>
+<script src="assets/budget-worksheet.js?v=2026-10-02c"></script>
+<script src="assets/screens.js?v=2026-10-02c"></script>
+<script src="assets/app.js?v=2026-10-02c"></script>
 </body>
 </html>
