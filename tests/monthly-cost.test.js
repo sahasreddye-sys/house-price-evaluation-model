@@ -100,3 +100,13 @@ test('months to save the rest', () => {
   assert.equal(PM.monthsToSave(0, 1500), 0);
   assert.equal(PM.monthsToSave(10000, null), null, 'no saving amount given');
 });
+
+test('savings limit the price: closing costs plus the minimum down payment', () => {
+  // $85,000 / (5% + 3%) = $1,062,500
+  assert.equal(PM.maxPriceForCash(85000, 5, 3), 1062500);
+  // $20,000 / 8% = $250,000
+  assert.equal(PM.maxPriceForCash(20000, 5, 3), 250000);
+  assert.equal(PM.maxPriceForCash(0, 5, 3), 0, 'no savings, no purchase');
+  assert.equal(PM.maxPriceForCash(null, 5, 3), 0, 'blank savings counts as none');
+  assert.equal(PM.maxPriceForCash(20000, null, 3), null, 'closing cost source missing');
+});
